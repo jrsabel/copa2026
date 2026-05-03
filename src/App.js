@@ -1,79 +1,79 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "./supabaseClient";
+import { useState, useEffect, useMemo, useCallback } from "react";
 
 // ─── DADOS ────────────────────────────────────────────────────────────────────
 const GROUPS = {
   A: [
-    {name:"México",       code:"MEX",flag:"🇲🇽"},
-    {name:"Coreia do Sul",code:"KOR",flag:"🇰🇷"},
-    {name:"África do Sul",code:"RSA",flag:"🇿🇦"},
-    {name:"Tchéquia",     code:"CZE",flag:"🇨🇿"},
+    {name:"México",           code:"MEX", flag:"🇲🇽"},
+    {name:"Coreia do Sul",    code:"KOR", flag:"🇰🇷"},
+    {name:"África do Sul",    code:"RSA", flag:"🇿🇦"},
+    {name:"Rep. Tcheca",      code:"CZE", flag:"🇨🇿"},
   ],
   B: [
-    {name:"Canadá",          code:"CAN",flag:"🇨🇦"},
-    {name:"Suíça",           code:"SUI",flag:"🇨🇭"},
-    {name:"Qatar",           code:"QAT",flag:"🇶🇦"},
-    {name:"Bósnia-Herz.",    code:"BIH",flag:"🇧🇦"},
+    {name:"Canadá",           code:"CAN", flag:"🇨🇦"},
+    {name:"Bósnia",           code:"BIH", flag:"🇧🇦"},
+    {name:"Qatar",            code:"QAT", flag:"🇶🇦"},
+    {name:"Suíça",            code:"SUI", flag:"🇨🇭"},
   ],
   C: [
-    {name:"Brasil",   code:"BRA",flag:"🇧🇷"},
-    {name:"Marrocos", code:"MAR",flag:"🇲🇦"},
-    {name:"Haiti",    code:"HAI",flag:"🇭🇹"},
-    {name:"Escócia",  code:"SCO",flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿"},
+    {name:"Brasil",           code:"BRA", flag:"🇧🇷"},
+    {name:"Marrocos",         code:"MAR", flag:"🇲🇦"},
+    {name:"Haiti",            code:"HAI", flag:"🇭🇹"},
+    {name:"Escócia",          code:"SCO", flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿"},
   ],
   D: [
-    {name:"Estados Unidos",code:"USA",flag:"🇺🇸"},
-    {name:"Paraguai",      code:"PAR",flag:"🇵🇾"},
-    {name:"Austrália",     code:"AUS",flag:"🇦🇺"},
-    {name:"Turquia",       code:"TUR",flag:"🇹🇷"},
+    {name:"Estados Unidos",   code:"USA", flag:"🇺🇸"},
+    {name:"Paraguai",         code:"PAR", flag:"🇵🇾"},
+    {name:"Austrália",        code:"AUS", flag:"🇦🇺"},
+    {name:"Turquia",          code:"TUR", flag:"🇹🇷"},
   ],
   E: [
-    {name:"Alemanha",    code:"GER",flag:"🇩🇪"},
-    {name:"Curaçao",     code:"CUW",flag:"🇨🇼"},
-    {name:"Costa do Marfim",code:"CIV",flag:"🇨🇮"},
-    {name:"Equador",     code:"ECU",flag:"🇪🇨"},
+    {name:"Alemanha",         code:"GER", flag:"🇩🇪"},
+    {name:"Curaçao",          code:"CUW", flag:"🇨🇼"},
+    {name:"Costa do Marfim",  code:"CIV", flag:"🇨🇮"},
+    {name:"Equador",          code:"ECU", flag:"🇪🇨"},
   ],
   F: [
-    {name:"Argentina", code:"ARG",flag:"🇦🇷"},
-    {name:"Japão",     code:"JPN",flag:"🇯🇵"},
-    {name:"Chile",     code:"CHI",flag:"🇨🇱"},
-    {name:"Albânia",   code:"ALB",flag:"🇦🇱"},
+    {name:"Holanda",          code:"NED", flag:"🇳🇱"},
+    {name:"Japão",            code:"JPN", flag:"🇯🇵"},
+    {name:"Suécia",           code:"SWE", flag:"🇸🇪"},
+    {name:"Tunísia",          code:"TUN", flag:"🇹🇳"},
   ],
   G: [
-    {name:"Espanha",   code:"ESP",flag:"🇪🇸"},
-    {name:"Holanda",   code:"NED",flag:"🇳🇱"},
-    {name:"Romênia",   code:"ROU",flag:"🇷🇴"},
-    {name:"Uzbequistão",code:"UZB",flag:"🇺🇿"},
+    {name:"Bélgica",          code:"BEL", flag:"🇧🇪"},
+    {name:"Egito",            code:"EGY", flag:"🇪🇬"},
+    {name:"Irã",              code:"IRN", flag:"🇮🇷"},
+    {name:"Nova Zelândia",    code:"NZL", flag:"🇳🇿"},
   ],
   H: [
-    {name:"Portugal",  code:"POR",flag:"🇵🇹"},
-    {name:"Polônia",   code:"POL",flag:"🇵🇱"},
-    {name:"Argélia",   code:"ALG",flag:"🇩🇿"},
-    {name:"Burquina Fasso",code:"BFA",flag:"🇧🇫"},
+    {name:"Espanha",          code:"ESP", flag:"🇪🇸"},
+    {name:"Cabo Verde",       code:"CPV", flag:"🇨🇻"},
+    {name:"Arábia Saudita",   code:"KSA", flag:"🇸🇦"},
+    {name:"Uruguai",          code:"URU", flag:"🇺🇾"},
   ],
   I: [
-    {name:"França",  code:"FRA",flag:"🇫🇷"},
-    {name:"Senegal", code:"SEN",flag:"🇸🇳"},
-    {name:"Iraque",  code:"IRQ",flag:"🇮🇶"},
-    {name:"Noruega", code:"NOR",flag:"🇳🇴"},
+    {name:"França",           code:"FRA", flag:"🇫🇷"},
+    {name:"Senegal",          code:"SEN", flag:"🇸🇳"},
+    {name:"Iraque",           code:"IRQ", flag:"🇮🇶"},
+    {name:"Noruega",          code:"NOR", flag:"🇳🇴"},
   ],
   J: [
-    {name:"Inglaterra",code:"ENG",flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿"},
-    {name:"Irlanda",   code:"IRL",flag:"🇮🇪"},
-    {name:"Nova Zelândia",code:"NZL",flag:"🇳🇿"},
-    {name:"África Ocid.",code:"WAF",flag:"🏳️"},
+    {name:"Argentina",        code:"ARG", flag:"🇦🇷"},
+    {name:"Argélia",          code:"ALG", flag:"🇩🇿"},
+    {name:"Áustria",          code:"AUT", flag:"🇦🇹"},
+    {name:"Jordânia",         code:"JOR", flag:"🇯🇴"},
   ],
   K: [
-    {name:"Colômbia",    code:"COL",flag:"🇨🇴"},
-    {name:"Camarões",    code:"CMR",flag:"🇨🇲"},
-    {name:"Hungria",     code:"HUN",flag:"🇭🇺"},
-    {name:"Interconf.", code:"INT",flag:"🏳️"},
+    {name:"Portugal",         code:"POR", flag:"🇵🇹"},
+    {name:"RD Congo",         code:"COD", flag:"🇨🇩"},
+    {name:"Uzbequistão",      code:"UZB", flag:"🇺🇿"},
+    {name:"Colômbia",         code:"COL", flag:"🇨🇴"},
   ],
   L: [
-    {name:"Uruguai",   code:"URU",flag:"🇺🇾"},
-    {name:"Egito",     code:"EGY",flag:"🇪🇬"},
-    {name:"Arábia Saudita",code:"KSA",flag:"🇸🇦"},
-    {name:"Interconf.",code:"IN2",flag:"🏳️"},
+    {name:"Inglaterra",       code:"ENG", flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿"},
+    {name:"Croácia",          code:"CRO", flag:"🇭🇷"},
+    {name:"Gana",             code:"GHA", flag:"🇬🇭"},
+    {name:"Panamá",           code:"PAN", flag:"🇵🇦"},
   ],
 };
 
@@ -327,7 +327,7 @@ const AlbumTab = ({ stickers, onSelectTeam }) => {
                           cursor:"pointer",gap:12}}>
                         <span style={{fontSize:22,flexShrink:0}}>{team.flag}</span>
                         <div style={{flex:1,textAlign:"left"}}>
-                          <div style={{fontSize:12,fontWeight:600,color:"#111"}}>{team.name}</div>
+                          <div style={{fontSize:12,fontWeight:600,color:"#111"}}>{team.name} <span style={{color:"#bbb",fontWeight:400,fontSize:11}}>({team.code})</span></div>
                           <div style={{fontSize:10,color:"#aaa",marginTop:1}}>{owned} de 20</div>
                         </div>
                         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
@@ -404,6 +404,22 @@ const StatsTab = ({ stickers }) => {
 // ─── ABA TROCAR ───────────────────────────────────────────────────────────────
 const TrocarTab = ({ stickers, onToggleRep }) => {
   const [copied, setCopied] = useState(false);
+
+  async function handleShare() {
+    const url = `${window.location.origin}/?user=jrsabel`;
+    const text = `Minhas figurinhas repetidas da Copa 2026 — veja quais tenho para trocar!`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Copa 2026 — Figurinhas Repetidas", text, url });
+      } catch (e) {}
+    } else {
+      // Fallback: copia o link
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      });
+    }
+  }
   const rep = Object.entries(stickers)
     .filter(([,v])=>v.owned&&v.repeated)
     .map(([id])=>({id, ...ALL[id]}))
@@ -424,14 +440,14 @@ const TrocarTab = ({ stickers, onToggleRep }) => {
           color:"#888",marginBottom:12,fontFamily:"monospace",wordBreak:"break-all"}}>
           albumcopa26.vercel.app/?user=jrsabel
         </div>
-        <button onClick={()=>{setCopied(true);setTimeout(()=>setCopied(false),2000)}}
+        <button onClick={handleShare}
           style={{width:"100%",padding:"11px",background:copied?"#f7f7f7":"#111",
             border:`1px solid ${copied?"#e0e0e0":"#111"}`,borderRadius:6,
             color:copied?"#111":"#fff",fontSize:12,fontWeight:600,
             fontFamily:"Georgia,serif",cursor:"pointer",
             display:"flex",alignItems:"center",justifyContent:"center",gap:8,letterSpacing:0.3}}>
           <Icon name={copied?"check":"copy"} size={13} color={copied?"#111":"#fff"} sw={2}/>
-          {copied?"Copiado!":"Copiar link"}
+          {copied?"Link copiado!":"Compartilhar minhas repetidas"}
         </button>
       </div>
 
@@ -483,7 +499,7 @@ const TrocarTab = ({ stickers, onToggleRep }) => {
 };
 
 // ─── ABA PERFIL ───────────────────────────────────────────────────────────────
-const PerfilTab = ({ username, email, onSignOut }) => (
+const PerfilTab = ({ onSignOut }) => (
   <div style={{padding:"12px 14px 20px"}}>
     <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,
       padding:24,textAlign:"center",marginBottom:10}}>
@@ -491,8 +507,8 @@ const PerfilTab = ({ username, email, onSignOut }) => (
         display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
         <Icon name="user" size={22} color="#fff" sw={1.5}/>
       </div>
-      <div style={{fontSize:16,fontWeight:700,color:"#111",fontFamily:"Georgia,serif"}}>{ username }</div>
-      <div style={{fontSize:11,color:"#aaa",marginTop:3}}>{ email }</div>
+      <div style={{fontSize:16,fontWeight:700,color:"#111",fontFamily:"Georgia,serif"}}>jrsabel</div>
+      <div style={{fontSize:11,color:"#aaa",marginTop:3}}>juniorsabel@gmail.com</div>
     </div>
     <button style={{width:"100%",padding:"13px",background:"#fff",
       border:"1px solid #e8e8e8",borderRadius:8,color:"#aaa",
@@ -595,8 +611,8 @@ function PublicRepeatedPage({ username }) {
   const byGroup = useMemo(() => { const m={}; rep.forEach(s=>{if(!m[s.group])m[s.group]=[];m[s.group].push(s)}); return m; }, [rep]);
 
   return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#f4f4f4",fontFamily:"Georgia,serif"}}>
-      <div style={{background:"#fff",borderBottom:"1px solid #e8e8e8",padding:"14px 16px",position:"sticky",top:0}}>
+    <div style={{maxWidth:700,margin:"0 auto",minHeight:"100vh",background:"#f4f4f4",fontFamily:"Georgia,serif"}}>
+      <div style={{background:"#fff",borderBottom:"1px solid #e8e8e8",padding:"14px 20px",position:"sticky",top:0}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div>
             <div style={{fontSize:14,fontWeight:700,color:"#111"}}>Repetidas de {username}</div>
@@ -605,7 +621,7 @@ function PublicRepeatedPage({ username }) {
           <a href="/" style={{fontSize:11,color:"#aaa",textDecoration:"none",fontFamily:"Georgia,serif"}}>← Meu álbum</a>
         </div>
       </div>
-      <div style={{padding:"12px 14px 24px"}}>
+      <div style={{padding:"16px 20px 32px"}}>
         {loading ? <div style={{textAlign:"center",padding:40,color:"#bbb",fontSize:13}}>Carregando...</div>
         : rep.length===0 ? <div style={{textAlign:"center",padding:40,color:"#bbb",fontSize:13}}>Nenhuma repetida ainda</div>
         : Object.entries(byGroup).map(([g,items])=>(
@@ -683,17 +699,13 @@ export default function App() {
   const pct = Math.round((owned/TOTAL)*100);
 
   if (publicUser) return <PublicRepeatedPage username={publicUser}/>;
-
-  if (session === undefined) return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f4f4f4",color:"#aaa",fontSize:13,fontFamily:"Georgia,serif"}}>
-      Carregando...
-    </div>
-  );
-
+  if (session === undefined) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f4f4f4",color:"#aaa",fontSize:13,fontFamily:"Georgia,serif"}}>Carregando...</div>;
   if (!session) return <AuthScreen onLogin={()=>{}} />;
 
-  const CupSVG = () => (
-    <svg viewBox="0 0 80 90" width="18" fill="none">
+  const NAV = [{id:"album",icon:"album",label:"Álbum"},{id:"stats",icon:"chart",label:"Stats"},{id:"share",icon:"repeat",label:"Trocar"},{id:"profile",icon:"user",label:"Perfil"}];
+
+  const CupSVG = ({size=18}) => (
+    <svg viewBox="0 0 80 90" width={size} fill="none">
       <path d="M22 10 C22 10 20 26 22 34 C24 42 32 46 40 46 C48 46 56 42 58 34 C60 26 58 10 58 10 Z" fill="#fff" opacity="0.9"/>
       <path d="M22 16 C17 16 13 20 13 25 C13 30 17 34 22 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
       <path d="M58 16 C63 16 67 20 67 25 C67 30 63 34 58 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
@@ -703,55 +715,126 @@ export default function App() {
     </svg>
   );
 
-  const NAV = [{id:"album",icon:"album",label:"Álbum"},{id:"stats",icon:"chart",label:"Stats"},{id:"share",icon:"repeat",label:"Trocar"},{id:"profile",icon:"user",label:"Perfil"}];
+    }
+
+  const content = selectedTeam
+    ? <TeamScreen team={selectedTeam} stickers={stickers} onToggle={toggle} onToggleRep={toggleRep} onBack={()=>setSelectedTeam(null)}/>
+    : <>
+        {tab==="album"   && <AlbumTab stickers={stickers} onSelectTeam={t=>setSelectedTeam(t)}/>}
+        {tab==="stats"   && <StatsTab stickers={stickers}/>}
+        {tab==="share"   && <TrocarTab stickers={stickers} onToggleRep={toggleRep}/>}
+        {tab==="profile" && <PerfilTab username={username} email={email} onSignOut={()=>supabase.auth.signOut()}/>}
+      </>;
 
   return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#f4f4f4",fontFamily:"Georgia,serif",display:"flex",flexDirection:"column"}}>
-      <style>{`*{box-sizing:border-box}body{margin:0;background:#f4f4f4}::-webkit-scrollbar{display:none}button{font-family:Georgia,serif;transition:all .15s}button:active{opacity:.75;transform:scale(.97)}input{font-family:Georgia,serif}`}</style>
+    <div style={{minHeight:"100vh",background:"#f4f4f4",fontFamily:"Georgia,serif"}}>
+      <style>{`
+        *{box-sizing:border-box} body{margin:0;background:#f4f4f4}
+        ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:2px}
+        button{font-family:Georgia,serif;transition:all .15s} button:active{opacity:.75;transform:scale(.97)}
+        input{font-family:Georgia,serif}
+        .layout{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height:100vh}
+        .sidebar{display:none}
+        .top-header{display:flex}
+        .bottom-nav{display:flex;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;border-top:1px solid #e8e8e8;z-index:200}
+        .main-content{flex:1;overflow-y:auto;padding-bottom:68px}
+        .desktop-header{display:none}
+        @media(min-width:768px){
+          .layout{flex-direction:row;max-width:100%;min-height:100vh}
+          .sidebar{display:flex;flex-direction:column;width:220px;min-height:100vh;background:#fff;border-right:1px solid #e8e8e8;position:sticky;top:0;padding:24px 0;flex-shrink:0}
+          .top-header{display:none}
+          .bottom-nav{display:none}
+          .main-content{flex:1;overflow-y:auto;padding-bottom:0;max-width:820px}
+          .desktop-header{display:flex;background:#fff;border-bottom:1px solid #e8e8e8;padding:14px 24px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+        }
+      `}</style>
 
-      <div style={{background:"#fff",borderBottom:"1px solid #e8e8e8",padding:"12px 16px",position:"sticky",top:0,zIndex:100}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          {selectedTeam
-            ? <button onClick={()=>setSelectedTeam(null)} style={{background:"none",border:"none",cursor:"pointer",padding:4,margin:-4}}><Icon name="back" size={18} color="#111" sw={2}/></button>
-            : <div style={{width:32,height:32,background:"#111",borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><CupSVG/></div>
-          }
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:14,color:"#111",fontWeight:700,letterSpacing:0.3}}>{selectedTeam ? selectedTeam.name : "Copa 2026"}</div>
-            <div style={{fontSize:9,color:"#bbb",letterSpacing:1.5,marginTop:1}}>{selectedTeam ? "FIGURINHAS" : "ÁLBUM DE FIGURINHAS"}</div>
+      <div className="layout">
+        {/* Sidebar desktop */}
+        <aside className="sidebar">
+          <div style={{padding:"0 20px 24px",borderBottom:"1px solid #f0f0f0"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:36,height:36,background:"#111",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><CupSVG size={20}/></div>
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:"#111",letterSpacing:0.3}}>Copa 2026</div>
+                <div style={{fontSize:9,color:"#bbb",letterSpacing:1.5}}>ÁLBUM DE FIGURINHAS</div>
+              </div>
+            </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-            {saving && <span style={{fontSize:9,color:"#bbb"}}>salvando…</span>}
-            <div style={{textAlign:"right"}}>
+          <div style={{padding:"16px 20px",borderBottom:"1px solid #f0f0f0"}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+              <span style={{fontSize:11,color:"#aaa"}}>Progresso</span>
+              <span style={{fontSize:11,fontWeight:700,color:"#111"}}>{pct}%</span>
+            </div>
+            <Bar value={owned} total={TOTAL} height={3}/>
+            <div style={{fontSize:10,color:"#bbb",marginTop:5}}>{owned} de {TOTAL}</div>
+          </div>
+          {saving && <div style={{padding:"8px 20px",fontSize:10,color:"#bbb"}}>Salvando…</div>}
+          <nav style={{padding:"12px 0",flex:1}}>
+            {NAV.map(n=>(
+              <button key={n.id} onClick={()=>{setTab(n.id);setSelectedTeam(null)}}
+                style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"11px 20px",border:"none",background:tab===n.id&&!selectedTeam?"#f7f7f7":"transparent",cursor:"pointer",borderLeft:`3px solid ${tab===n.id&&!selectedTeam?"#111":"transparent"}`,color:tab===n.id&&!selectedTeam?"#111":"#aaa"}}>
+                <Icon name={n.icon} size={16} color={tab===n.id&&!selectedTeam?"#111":"#ccc"} sw={tab===n.id&&!selectedTeam?2:1.5}/>
+                <span style={{fontSize:13,fontWeight:tab===n.id&&!selectedTeam?700:400,letterSpacing:0.3}}>{n.label}</span>
+              </button>
+            ))}
+          </nav>
+          <div style={{padding:"16px 20px",borderTop:"1px solid #f0f0f0"}}>
+            <div style={{fontSize:12,fontWeight:600,color:"#111"}}>{username}</div>
+            <div style={{fontSize:10,color:"#aaa",marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{email}</div>
+            <button onClick={()=>supabase.auth.signOut()} style={{marginTop:10,width:"100%",padding:"8px",background:"none",border:"1px solid #e8e8e8",borderRadius:6,color:"#aaa",fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              <Icon name="logout" size={12} color="#aaa" sw={2}/> Sair
+            </button>
+          </div>
+        </aside>
+
+        <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
+          {/* Header mobile */}
+          <div className="top-header" style={{background:"#fff",borderBottom:"1px solid #e8e8e8",padding:"12px 16px",position:"sticky",top:0,zIndex:100,alignItems:"center",gap:12}}>
+            {selectedTeam
+              ? <button onClick={()=>setSelectedTeam(null)} style={{background:"none",border:"none",cursor:"pointer",padding:4,margin:-4}}><Icon name="back" size={18} color="#111" sw={2}/></button>
+              : <div style={{width:32,height:32,background:"#111",borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><CupSVG/></div>
+            }
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:14,color:"#111",fontWeight:700,letterSpacing:0.3}}>{selectedTeam?selectedTeam.name:"Copa 2026"}</div>
+              <div style={{fontSize:9,color:"#bbb",letterSpacing:1.5,marginTop:1}}>{selectedTeam?"FIGURINHAS":"ÁLBUM DE FIGURINHAS"}</div>
+            </div>
+            <div style={{textAlign:"right",flexShrink:0}}>
               <div style={{fontSize:12,color:"#111",fontWeight:700}}>{pct}%</div>
               <div style={{width:70,height:2,background:"#eee",borderRadius:2,marginTop:4}}><div style={{height:"100%",width:`${pct}%`,background:"#111",borderRadius:2,transition:"width .4s"}}/></div>
               <div style={{fontSize:9,color:"#bbb",marginTop:3}}>{owned}/{TOTAL}</div>
             </div>
           </div>
+
+          {/* Header desktop */}
+          <div className="desktop-header">
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              {selectedTeam&&<button onClick={()=>setSelectedTeam(null)} style={{background:"none",border:"none",cursor:"pointer",padding:4,marginRight:4}}><Icon name="back" size={16} color="#111" sw={2}/></button>}
+              <div>
+                <div style={{fontSize:15,fontWeight:700,color:"#111"}}>{selectedTeam?selectedTeam.name:NAV.find(n=>n.id===tab)?.label}</div>
+                <div style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{selectedTeam?"FIGURINHAS":"COPA DO MUNDO 2026"}</div>
+              </div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              {saving&&<span style={{fontSize:10,color:"#bbb"}}>Salvando…</span>}
+              <div style={{fontSize:12,color:"#aaa"}}>{owned} figurinhas · {TOTAL-owned} faltam</div>
+            </div>
+          </div>
+
+          <div className="main-content">{content}</div>
+
+          {/* Bottom nav mobile */}
+          <nav className="bottom-nav">
+            {NAV.map(n=>(
+              <button key={n.id} onClick={()=>{setTab(n.id);setSelectedTeam(null)}}
+                style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",gap:3,borderTop:`2px solid ${tab===n.id&&!selectedTeam?"#111":"transparent"}`,marginTop:-1}}>
+                <Icon name={n.icon} size={17} color={tab===n.id&&!selectedTeam?"#111":"#ccc"} sw={tab===n.id&&!selectedTeam?2:1.5}/>
+                <span style={{fontSize:9,fontWeight:tab===n.id&&!selectedTeam?700:400,color:tab===n.id&&!selectedTeam?"#111":"#ccc",letterSpacing:0.8}}>{n.label}</span>
+              </button>
+            ))}
+          </nav>
         </div>
       </div>
-
-      <div style={{flex:1,overflowY:"auto",paddingBottom:68}}>
-        {selectedTeam
-          ? <TeamScreen team={selectedTeam} stickers={stickers} onToggle={toggle} onToggleRep={toggleRep} onBack={()=>setSelectedTeam(null)}/>
-          : <>
-              {tab==="album"   && <AlbumTab stickers={stickers} onSelectTeam={t=>setSelectedTeam(t)}/>}
-              {tab==="stats"   && <StatsTab stickers={stickers}/>}
-              {tab==="share"   && <TrocarTab stickers={stickers} onToggleRep={toggleRep}/>}
-              {tab==="profile" && <PerfilTab username={username} email={email} onSignOut={()=>supabase.auth.signOut()}/>}
-            </>
-        }
-      </div>
-
-      {!selectedTeam && (
-        <nav style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:"#fff",borderTop:"1px solid #e8e8e8",display:"flex",zIndex:200}}>
-          {NAV.map(n=>(
-            <button key={n.id} onClick={()=>setTab(n.id)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",gap:3,borderTop:`2px solid ${tab===n.id?"#111":"transparent"}`,marginTop:-1}}>
-              <Icon name={n.icon} size={17} color={tab===n.id?"#111":"#ccc"} sw={tab===n.id?2:1.5}/>
-              <span style={{fontSize:9,fontWeight:tab===n.id?700:400,color:tab===n.id?"#111":"#ccc",letterSpacing:0.8}}>{n.label}</span>
-            </button>
-          ))}
-        </nav>
-      )}
     </div>
   );
 }

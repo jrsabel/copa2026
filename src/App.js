@@ -19,7 +19,7 @@ const GROUPS = {
     {name:"Brasil",           code:"BRA", flag:"🇧🇷"},
     {name:"Marrocos",         code:"MAR", flag:"🇲🇦"},
     {name:"Haiti",            code:"HAI", flag:"🇭🇹"},
-    {name:"Escócia",          code:"SCO", flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿"},
+    {name:"Escócia",          code:"SCO", flag:"SC"},
   ],
   D: [
     {name:"Estados Unidos",   code:"USA", flag:"🇺🇸"},
@@ -70,7 +70,7 @@ const GROUPS = {
     {name:"Colômbia",         code:"COL", flag:"🇨🇴"},
   ],
   L: [
-    {name:"Inglaterra",       code:"ENG", flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿"},
+    {name:"Inglaterra",       code:"ENG", flag:"GB"},
     {name:"Croácia",          code:"CRO", flag:"🇭🇷"},
     {name:"Gana",             code:"GHA", flag:"🇬🇭"},
     {name:"Panamá",           code:"PAN", flag:"🇵🇦"},

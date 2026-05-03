@@ -1,87 +1,149 @@
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "./supabaseClient";
-import { useState, useEffect, useMemo, useCallback } from "react";
 
-// ─── DADOS ────────────────────────────────────────────────────────────────────
+// ─── GRUPOS OFICIAIS ──────────────────────────────────────────────────────────
 const GROUPS = {
   A: [
-    {name:"México",           code:"MEX", flag:"🇲🇽"},
-    {name:"Coreia do Sul",    code:"KOR", flag:"🇰🇷"},
-    {name:"África do Sul",    code:"RSA", flag:"🇿🇦"},
-    {name:"Rep. Tcheca",      code:"CZE", flag:"🇨🇿"},
+    {name:"México",          code:"MEX", flag:"🇲🇽"},
+    {name:"Coreia do Sul",   code:"KOR", flag:"🇰🇷"},
+    {name:"África do Sul",   code:"RSA", flag:"🇿🇦"},
+    {name:"Rep. Tcheca",     code:"CZE", flag:"🇨🇿"},
   ],
   B: [
-    {name:"Canadá",           code:"CAN", flag:"🇨🇦"},
-    {name:"Bósnia",           code:"BIH", flag:"🇧🇦"},
-    {name:"Qatar",            code:"QAT", flag:"🇶🇦"},
-    {name:"Suíça",            code:"SUI", flag:"🇨🇭"},
+    {name:"Canadá",          code:"CAN", flag:"🇨🇦"},
+    {name:"Bósnia",          code:"BIH", flag:"🇧🇦"},
+    {name:"Qatar",           code:"QAT", flag:"🇶🇦"},
+    {name:"Suíça",           code:"SUI", flag:"🇨🇭"},
   ],
   C: [
-    {name:"Brasil",           code:"BRA", flag:"🇧🇷"},
-    {name:"Marrocos",         code:"MAR", flag:"🇲🇦"},
-    {name:"Haiti",            code:"HAI", flag:"🇭🇹"},
-    {name:"Escócia",          code:"SCO", flag:"SC"},
+    {name:"Brasil",          code:"BRA", flag:"🇧🇷"},
+    {name:"Marrocos",        code:"MAR", flag:"🇲🇦"},
+    {name:"Haiti",           code:"HAI", flag:"🇭🇹"},
+    {name:"Escócia",         code:"SCO", flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿"},
   ],
   D: [
-    {name:"Estados Unidos",   code:"USA", flag:"🇺🇸"},
-    {name:"Paraguai",         code:"PAR", flag:"🇵🇾"},
-    {name:"Austrália",        code:"AUS", flag:"🇦🇺"},
-    {name:"Turquia",          code:"TUR", flag:"🇹🇷"},
+    {name:"Estados Unidos",  code:"USA", flag:"🇺🇸"},
+    {name:"Paraguai",        code:"PAR", flag:"🇵🇾"},
+    {name:"Austrália",       code:"AUS", flag:"🇦🇺"},
+    {name:"Turquia",         code:"TUR", flag:"🇹🇷"},
   ],
   E: [
-    {name:"Alemanha",         code:"GER", flag:"🇩🇪"},
-    {name:"Curaçao",          code:"CUW", flag:"🇨🇼"},
-    {name:"Costa do Marfim",  code:"CIV", flag:"🇨🇮"},
-    {name:"Equador",          code:"ECU", flag:"🇪🇨"},
+    {name:"Alemanha",        code:"GER", flag:"🇩🇪"},
+    {name:"Curaçao",         code:"CUW", flag:"🇨🇼"},
+    {name:"Costa do Marfim", code:"CIV", flag:"🇨🇮"},
+    {name:"Equador",         code:"ECU", flag:"🇪🇨"},
   ],
   F: [
-    {name:"Holanda",          code:"NED", flag:"🇳🇱"},
-    {name:"Japão",            code:"JPN", flag:"🇯🇵"},
-    {name:"Suécia",           code:"SWE", flag:"🇸🇪"},
-    {name:"Tunísia",          code:"TUN", flag:"🇹🇳"},
+    {name:"Holanda",         code:"NED", flag:"🇳🇱"},
+    {name:"Japão",           code:"JPN", flag:"🇯🇵"},
+    {name:"Suécia",          code:"SWE", flag:"🇸🇪"},
+    {name:"Tunísia",         code:"TUN", flag:"🇹🇳"},
   ],
   G: [
-    {name:"Bélgica",          code:"BEL", flag:"🇧🇪"},
-    {name:"Egito",            code:"EGY", flag:"🇪🇬"},
-    {name:"Irã",              code:"IRN", flag:"🇮🇷"},
-    {name:"Nova Zelândia",    code:"NZL", flag:"🇳🇿"},
+    {name:"Bélgica",         code:"BEL", flag:"🇧🇪"},
+    {name:"Egito",           code:"EGY", flag:"🇪🇬"},
+    {name:"Irã",             code:"IRN", flag:"🇮🇷"},
+    {name:"Nova Zelândia",   code:"NZL", flag:"🇳🇿"},
   ],
   H: [
-    {name:"Espanha",          code:"ESP", flag:"🇪🇸"},
-    {name:"Cabo Verde",       code:"CPV", flag:"🇨🇻"},
-    {name:"Arábia Saudita",   code:"KSA", flag:"🇸🇦"},
-    {name:"Uruguai",          code:"URU", flag:"🇺🇾"},
+    {name:"Espanha",         code:"ESP", flag:"🇪🇸"},
+    {name:"Cabo Verde",      code:"CPV", flag:"🇨🇻"},
+    {name:"Arábia Saudita",  code:"KSA", flag:"🇸🇦"},
+    {name:"Uruguai",         code:"URU", flag:"🇺🇾"},
   ],
   I: [
-    {name:"França",           code:"FRA", flag:"🇫🇷"},
-    {name:"Senegal",          code:"SEN", flag:"🇸🇳"},
-    {name:"Iraque",           code:"IRQ", flag:"🇮🇶"},
-    {name:"Noruega",          code:"NOR", flag:"🇳🇴"},
+    {name:"França",          code:"FRA", flag:"🇫🇷"},
+    {name:"Senegal",         code:"SEN", flag:"🇸🇳"},
+    {name:"Iraque",          code:"IRQ", flag:"🇮🇶"},
+    {name:"Noruega",         code:"NOR", flag:"🇳🇴"},
   ],
   J: [
-    {name:"Argentina",        code:"ARG", flag:"🇦🇷"},
-    {name:"Argélia",          code:"ALG", flag:"🇩🇿"},
-    {name:"Áustria",          code:"AUT", flag:"🇦🇹"},
-    {name:"Jordânia",         code:"JOR", flag:"🇯🇴"},
+    {name:"Argentina",       code:"ARG", flag:"🇦🇷"},
+    {name:"Argélia",         code:"ALG", flag:"🇩🇿"},
+    {name:"Áustria",         code:"AUT", flag:"🇦🇹"},
+    {name:"Jordânia",        code:"JOR", flag:"🇯🇴"},
   ],
   K: [
-    {name:"Portugal",         code:"POR", flag:"🇵🇹"},
-    {name:"RD Congo",         code:"COD", flag:"🇨🇩"},
-    {name:"Uzbequistão",      code:"UZB", flag:"🇺🇿"},
-    {name:"Colômbia",         code:"COL", flag:"🇨🇴"},
+    {name:"Portugal",        code:"POR", flag:"🇵🇹"},
+    {name:"RD Congo",        code:"COD", flag:"🇨🇩"},
+    {name:"Uzbequistão",     code:"UZB", flag:"🇺🇿"},
+    {name:"Colômbia",        code:"COL", flag:"🇨🇴"},
   ],
   L: [
-    {name:"Inglaterra",       code:"ENG", flag:"GB"},
-    {name:"Croácia",          code:"CRO", flag:"🇭🇷"},
-    {name:"Gana",             code:"GHA", flag:"🇬🇭"},
-    {name:"Panamá",           code:"PAN", flag:"🇵🇦"},
+    {name:"Inglaterra",      code:"ENG", flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿"},
+    {name:"Croácia",         code:"CRO", flag:"🇭🇷"},
+    {name:"Gana",            code:"GHA", flag:"🇬🇭"},
+    {name:"Panamá",          code:"PAN", flag:"🇵🇦"},
   ],
 };
 
-// Gera todos os IDs: cada seleção tem 20 figurinhas (1 escudo + 19 jogadores)
+// ─── ESPECIAIS ────────────────────────────────────────────────────────────────
+// Subgrupos de especiais com cor e label próprios
+const SPECIAL_GROUPS = {
+  FWC: {
+    label: "Especiais",
+    color: "#c9a84c",        // dourado
+    ids: ["FWC 00","FWC 1","FWC 2","FWC 3","FWC 4","FWC 5","FWC 6","FWC 7","FWC 8"],
+    labels: {
+      "FWC 00":"Capa","FWC 1":"Apresentação","FWC 2":"Sede EUA","FWC 3":"Sede México",
+      "FWC 4":"Sede Canadá","FWC 5":"Taça FIFA","FWC 6":"Mascote","FWC 7":"Bola Oficial","FWC 8":"Árbitros",
+    },
+  },
+  SEL: {
+    label: "Seleções Especiais",
+    color: "#c9a84c",        // dourado
+    ids: ["FWC 9","FWC 10","FWC 11","FWC 12","FWC 13","FWC 14","FWC 15","FWC 16","FWC 17","FWC 18","FWC 19"],
+    labels: {
+      "FWC 9":"Sel. Especial 1","FWC 10":"Sel. Especial 2","FWC 11":"Sel. Especial 3",
+      "FWC 12":"Sel. Especial 4","FWC 13":"Sel. Especial 5","FWC 14":"Sel. Especial 6",
+      "FWC 15":"Sel. Especial 7","FWC 16":"Sel. Especial 8","FWC 17":"Sel. Especial 9",
+      "FWC 18":"Sel. Especial 10","FWC 19":"Sel. Especial 11",
+    },
+  },
+  CC: {
+    label: "Coca-Cola",
+    color: "#c0392b",        // vermelho
+    ids: ["CC1","CC2","CC3","CC4","CC5","CC6","CC7","CC8","CC9","CC10","CC11","CC12","CC13","CC14"],
+    labels: {
+      "CC1":"Coca-Cola 1","CC2":"Coca-Cola 2","CC3":"Coca-Cola 3","CC4":"Coca-Cola 4",
+      "CC5":"Coca-Cola 5","CC6":"Coca-Cola 6","CC7":"Coca-Cola 7","CC8":"Coca-Cola 8",
+      "CC9":"Coca-Cola 9","CC10":"Coca-Cola 10","CC11":"Coca-Cola 11","CC12":"Coca-Cola 12",
+      "CC13":"Coca-Cola 13","CC14":"Coca-Cola 14",
+    },
+  },
+};
+
+// Cor de destaque por id especial
+function specialColor(id) {
+  if (SPECIAL_GROUPS.CC.ids.includes(id)) return SPECIAL_GROUPS.CC.color;
+  if (SPECIAL_GROUPS.FWC.ids.includes(id) || SPECIAL_GROUPS.SEL.ids.includes(id)) return SPECIAL_GROUPS.FWC.color;
+  return "#111";
+}
+function specialGroup(id) {
+  if (SPECIAL_GROUPS.CC.ids.includes(id)) return "CC";
+  if (SPECIAL_GROUPS.SEL.ids.includes(id)) return "SEL";
+  if (SPECIAL_GROUPS.FWC.ids.includes(id)) return "FWC";
+  return null;
+}
+function specialLabel(id) {
+  for (const sg of Object.values(SPECIAL_GROUPS)) {
+    if (sg.labels[id]) return sg.labels[id];
+  }
+  return id;
+}
+
+// ─── TODOS OS IDs ─────────────────────────────────────────────────────────────
 function allStickers() {
   const ids = {};
-  // Especiais FWC 1-6
-  for (let i = 1; i <= 6; i++) ids[`FWC ${i}`] = { group:"FWC", team:"Especial", code:"FWC", n:i };
+  // Especiais FWC + SEL
+  [...SPECIAL_GROUPS.FWC.ids, ...SPECIAL_GROUPS.SEL.ids].forEach(id => {
+    ids[id] = { group:"ESPECIAL", subgroup: specialGroup(id), team:"Especial", code:"FWC", n:0, flag:"⭐" };
+  });
+  // Coca-Cola
+  SPECIAL_GROUPS.CC.ids.forEach(id => {
+    ids[id] = { group:"ESPECIAL", subgroup:"CC", team:"Coca-Cola", code:"CC", n:0, flag:"🥤" };
+  });
+  // Times
   Object.entries(GROUPS).forEach(([g, teams]) => {
     teams.forEach(team => {
       for (let n = 1; n <= 20; n++) {
@@ -95,12 +157,13 @@ function allStickers() {
 const ALL = allStickers();
 const TOTAL = Object.keys(ALL).length;
 
-// Demo data
+// Demo
 const DEMO = {};
 ["BRA 1","BRA 3","BRA 5","BRA 7","ARG 1","ARG 2","ARG 4","FRA 1","FRA 2","GER 1",
  "TUR 1","TUR 5","TUR 14","TUR 18","SCO 11","URU 3","MEX 5","MEX 9","MEX 14",
- "FWC 1","FWC 2","POR 1","POR 3","ESP 1","ITA 1"].forEach(id => {
-  DEMO[id] = { owned: true, repeated: ["TUR 14","BRA 5","ARG 4"].includes(id) };
+ "FWC 1","FWC 2","FWC 9","FWC 10","CC1","CC3","CC5",
+ "POR 1","POR 3","ESP 1"].forEach(id => {
+  DEMO[id] = { owned:true, repeated:["TUR 14","BRA 5","ARG 4","FWC 1","CC3"].includes(id), qty: ["TUR 14","BRA 5","ARG 4","FWC 1","CC3"].includes(id) ? 2 : 0 };
 });
 
 // ─── ICONS ────────────────────────────────────────────────────────────────────
@@ -113,10 +176,12 @@ const Icon = ({ name, size=18, color="#111", sw=1.5 }) => {
     user:   <><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
     search: <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></>,
     check:  <path d="M20 6L9 17l-5-5"/>,
-    copy:   <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></>,
+    share:  <><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></>,
     logout: <><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
     down:   <path d="m6 9 6 6 6-6"/>,
     right:  <path d="m9 18 6-6-6-6"/>,
+    plus:   <><path d="M12 5v14"/><path d="M5 12h14"/></>,
+    minus:  <path d="M5 12h14"/>,
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
@@ -127,31 +192,186 @@ const Icon = ({ name, size=18, color="#111", sw=1.5 }) => {
 };
 
 // ─── PROGRESS BAR ─────────────────────────────────────────────────────────────
-const Bar = ({ value, total, height=2 }) => {
+const Bar = ({ value, total, height=2, color="#111" }) => {
   const pct = total ? Math.round((value/total)*100) : 0;
   return (
-    <div style={{height, background:"#ececec", borderRadius:height, overflow:"hidden", flex:1}}>
-      <div style={{height:"100%", width:`${pct}%`, background:"#111", borderRadius:height, transition:"width .4s"}}/>
+    <div style={{height,background:"#ececec",borderRadius:height,overflow:"hidden",flex:1}}>
+      <div style={{height:"100%",width:`${pct}%`,background:color,borderRadius:height,transition:"width .4s"}}/>
     </div>
   );
 };
 
-// ─── TELA: GRID DE FIGURINHAS DE UMA SELEÇÃO ─────────────────────────────────
+// ─── BANDEIRAS SVG INLINE ─────────────────────────────────────────────────────
+// Bandeiras desenhadas em SVG puro, sem dependência de internet
+const FLAGS_SVG = {
+  BRA: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#009c3b"/><polygon points="10,1 19,7 10,13 1,7" fill="#FFDF00"/><circle cx="10" cy="7" r="3.5" fill="#002776"/><path d="M6.8,5.8 Q10,4.5 13.2,5.8" fill="none" stroke="#fff" strokeWidth="0.7"/></svg>,
+  ARG: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#74ACDF"/><rect y="4.67" width="20" height="4.67" fill="#fff"/><circle cx="10" cy="7" r="1.8" fill="#F6B40E"/></svg>,
+  URU: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#fff"/><rect y="1.56" width="20" height="1.56" fill="#0038A8"/><rect y="4.67" width="20" height="1.56" fill="#0038A8"/><rect y="7.78" width="20" height="1.56" fill="#0038A8"/><rect y="10.89" width="20" height="1.56" fill="#0038A8"/><circle cx="5" cy="7" r="2" fill="#F6D216"/></svg>,
+  FRA: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#ED2939"/><rect width="13.3" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#002395"/></svg>,
+  GER: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#FFCE00"/><rect width="20" height="9.33" fill="#DD0000"/><rect width="20" height="4.67" fill="#000"/></svg>,
+  ESP: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#c60b1e"/><rect y="3.5" width="20" height="7" fill="#ffc400"/></svg>,
+  ENG: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#fff"/><rect x="8.5" width="3" height="14" fill="#CF1B2B"/><rect y="5.5" width="20" height="3" fill="#CF1B2B"/></svg>,
+  POR: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#FF0000"/><rect width="8" height="14" fill="#006600"/><circle cx="8" cy="7" r="2.2" fill="#FFD700" stroke="#00008B" strokeWidth="0.4"/></svg>,
+  NED: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#1e4785"/><rect width="20" height="9.33" fill="#fff"/><rect width="20" height="4.67" fill="#ae1c28"/></svg>,
+  ITA: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#CE2B37"/><rect width="13.3" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#009246"/></svg>,
+  BEL: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#EF3340"/><rect width="13.3" height="14" fill="#FAE042"/><rect width="6.67" height="14" fill="#000"/></svg>,
+  CRO: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#fff"/><rect width="20" height="4.67" fill="#FF0000"/><rect y="9.33" width="20" height="4.67" fill="#0000CD"/></svg>,
+  JPN: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#fff"/><circle cx="10" cy="7" r="3.5" fill="#BC002D"/></svg>,
+  KOR: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#fff"/><circle cx="10" cy="7" r="3" fill="#CD2E3A"/><path d="M10,4 A3,3 0 0,1 10,10" fill="#003478"/></svg>,
+  AUS: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#00008B"/><path d="M0,0 L10,7 M10,0 L0,7" stroke="#fff" strokeWidth="2.5"/><path d="M0,0 L10,7 M10,0 L0,7" stroke="#C8102E" strokeWidth="1.5"/><rect x="4" width="2" height="7" fill="#fff"/><rect y="3" width="10" height="2" fill="#fff"/><rect x="4.4" width="1.2" height="7" fill="#C8102E"/><rect y="3.4" width="10" height="1.2" fill="#C8102E"/></svg>,
+  MAR: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#C1272D"/><polygon points="10,3.5 11.2,7 14.8,7 11.9,9.1 13,12.5 10,10.4 7,12.5 8.1,9.1 5.2,7 8.8,7" fill="none" stroke="#006233" strokeWidth="0.7"/></svg>,
+  RSA: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#007A4D"/><polygon points="0,0 8,7 0,14" fill="#000"/><polygon points="0,0 6,0 13,7 6,14 0,14 7,7" fill="#FFB81C"/><rect y="5.5" width="20" height="3" fill="#fff"/><rect y="6" width="20" height="2" fill="#E03C31"/></svg>,
+  MEX: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#CE1126"/><rect width="13.3" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#006847"/><circle cx="10" cy="7" r="1.8" fill="#8B4513"/></svg>,
+  USA: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#B22234"/><rect y="1.08" width="20" height="1.08" fill="#fff"/><rect y="3.23" width="20" height="1.08" fill="#fff"/><rect y="5.38" width="20" height="1.08" fill="#fff"/><rect y="7.54" width="20" height="1.08" fill="#fff"/><rect y="9.69" width="20" height="1.08" fill="#fff"/><rect y="11.85" width="20" height="1.08" fill="#fff"/><rect width="8" height="7.54" fill="#3C3B6E"/></svg>,
+  CAN: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#fff"/><rect width="5" height="14" fill="#FF0000"/><rect x="15" width="5" height="14" fill="#FF0000"/><polygon points="10,2 11,5.5 14.5,5.5 11.8,7.5 12.8,11 10,9 7.2,11 8.2,7.5 5.5,5.5 9,5.5" fill="#FF0000"/></svg>,
+  SCO: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#003DA5"/><path d="M0,0 L20,14 M20,0 L0,14" stroke="#fff" strokeWidth="3"/></svg>,
+  TUR: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#E30A17"/><circle cx="8" cy="7" r="3.2" fill="#fff"/><circle cx="9.5" cy="7" r="2.4" fill="#E30A17"/><polygon points="13,7 14.2,5.2 15.5,7 14.2,8.8" fill="#fff"/></svg>,
+  SEN: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#00853F"/><rect x="6.67" width="6.67" height="14" fill="#FDEF42"/><rect x="13.33" width="6.67" height="14" fill="#E31B23"/><polygon points="10,4.5 10.7,6.8 13,6.8 11.1,8.2 11.8,10.5 10,9.1 8.2,10.5 8.9,8.2 7,6.8 9.3,6.8" fill="#00853F"/></svg>,
+  COL: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#CE1126"/><rect width="20" height="9.33" fill="#003087"/><rect width="20" height="4.67" fill="#FCD116"/></svg>,
+  ECU: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#034EA2"/><rect width="20" height="9.33" fill="#E31837"/><rect width="20" height="4.67" fill="#FFD100"/></svg>,
+  GHA: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#006B3F"/><rect width="20" height="9.33" fill="#FCD116"/><rect width="20" height="4.67" fill="#EF3340"/><polygon points="10,5 10.8,7.4 13.4,7.4 11.3,8.9 12.1,11.3 10,9.8 7.9,11.3 8.7,8.9 6.6,7.4 9.2,7.4" fill="#000"/></svg>,
+  PAN: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#fff"/><rect width="10" height="7" fill="#DB161B"/><rect x="10" y="7" width="10" height="7" fill="#005293"/><polygon points="5,1 5.8,3.4 8.4,3.4 6.3,4.9 7.1,7.3 5,5.8 2.9,7.3 3.7,4.9 1.6,3.4 4.2,3.4" fill="#005293"/><polygon points="15,7.5 15.8,9.9 18.4,9.9 16.3,11.4 17.1,13.8 15,12.3 12.9,13.8 13.7,11.4 11.6,9.9 14.2,9.9" fill="#DB161B"/></svg>,
+  NOR: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#EF2B2D"/><rect x="5.5" width="3" height="14" fill="#fff"/><rect y="5.5" width="20" height="3" fill="#fff"/><rect x="6" width="2" height="14" fill="#002868"/><rect y="6" width="20" height="2" fill="#002868"/></svg>,
+  EGY: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#fff"/><rect width="20" height="4.67" fill="#CE1126"/><rect y="9.33" width="20" height="4.67" fill="#000"/><circle cx="10" cy="7" r="1.5" fill="#C09300"/></svg>,
+  IRN: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#239F40"/><rect width="20" height="9.33" fill="#fff"/><rect width="20" height="4.67" fill="#DA0000"/></svg>,
+  KSA: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#006C35"/><rect y="6.25" width="20" height="1.5" fill="#fff"/></svg>,
+  QAT: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#8D1B3D"/><rect width="7" height="14" fill="#fff"/><path d="M7,0 L9.5,1.4 L7,2.8 L9.5,4.2 L7,5.6 L9.5,7 L7,8.4 L9.5,9.8 L7,11.2 L9.5,12.6 L7,14" fill="#8D1B3D" stroke="#8D1B3D" strokeWidth="0.5"/></svg>,
+  SUI: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#FF0000"/><rect x="8.5" y="3" width="3" height="8" fill="#fff"/><rect x="5.5" y="6" width="9" height="2" fill="#fff"/></svg>,
+  BIH: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#002395"/><polygon points="4,0 18,0 18,14" fill="#FFCE00"/></svg>,
+  NZL: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#00247D"/><path d="M0,0 L10,7 M10,0 L0,7" stroke="#fff" strokeWidth="2.5"/><path d="M0,0 L10,7 M10,0 L0,7" stroke="#CC142B" strokeWidth="1.5"/><rect x="4" width="2" height="7" fill="#fff"/><rect y="3" width="10" height="2" fill="#fff"/><rect x="4.4" width="1.2" height="7" fill="#CC142B"/><rect y="3.4" width="10" height="1.2" fill="#CC142B"/></svg>,
+  CZE: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#D7141A"/><rect width="20" height="7" fill="#fff"/><polygon points="0,0 8,7 0,14" fill="#11457E"/></svg>,
+  JOR: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#007A3D"/><rect width="20" height="9.33" fill="#fff"/><rect width="20" height="4.67" fill="#000"/><polygon points="0,7 6,3.5 6,10.5" fill="#CE1126"/></svg>,
+  ALG: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#fff"/><rect width="10" height="14" fill="#006233"/><circle cx="11" cy="7" r="2.8" fill="#fff"/><circle cx="11.8" cy="7" r="2" fill="#006233"/><polygon points="13.5,7 14.5,5.5 15.8,7 14.5,8.5" fill="#D21034"/></svg>,
+  AUT: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#ED2939"/><rect y="4.67" width="20" height="4.67" fill="#fff"/></svg>,
+  POL: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#DC143C"/><rect width="20" height="7" fill="#fff"/></svg>,
+  CIV: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#009A00"/><rect width="13.3" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#F77F00"/></svg>,
+  PAR: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#0038A8"/><rect width="20" height="9.33" fill="#fff"/><rect width="20" height="4.67" fill="#D52B1E"/></svg>,
+  SWE: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#006AA7"/><rect x="5.5" width="3" height="14" fill="#FECC02"/><rect y="5.5" width="20" height="3" fill="#FECC02"/></svg>,
+  TUN: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#E70013"/><circle cx="10" cy="7" r="4" fill="#fff"/><circle cx="10" cy="7" r="2.8" fill="#E70013"/><polygon points="12.8,7 13.8,5.5 15,7 13.8,8.5" fill="#fff"/></svg>,
+  CPV: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#003893"/><rect y="7.5" width="20" height="3" fill="#CF1126"/><rect y="8.75" width="20" height="0.8" fill="#F7D116"/></svg>,
+  COD: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#007FFF"/><path d="M0,14 L20,0" stroke="#F7D618" strokeWidth="3"/><rect width="20" height="4" fill="#CE1021"/></svg>,
+  UZB: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#1EB53A"/><rect width="20" height="9.33" fill="#fff"/><rect width="20" height="4.67" fill="#009FCA"/><rect y="4.17" width="20" height="0.6" fill="#CE1126"/><rect y="9.33" width="20" height="0.6" fill="#CE1126"/></svg>,
+  HAI: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#D21034"/><rect width="20" height="7" fill="#00209F"/></svg>,
+  CUW: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#002B7F"/><rect y="8.5" width="20" height="2" fill="#F9E814"/><circle cx="5" cy="4.5" r="1.8" fill="#fff"/><circle cx="8.5" cy="4.5" r="1.8" fill="#fff"/></svg>,
+  IRQ: <svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#007A3D"/><rect width="20" height="9.33" fill="#fff"/><rect width="20" height="4.67" fill="#CE1126"/><rect x="7" y="5.5" width="6" height="3" fill="#000"/></svg>,
+};
+
+const FlagBadge = ({ code, emoji, size=36 }) => {
+  const flagSvg = FLAGS_SVG[code];
+  if (flagSvg) {
+    const cloned = React.cloneElement(flagSvg, {
+      width: size,
+      height: size,
+      preserveAspectRatio: "xMidYMid slice",
+      style: { display: "block", borderRadius: "50%" }
+    });
+    return (
+      <div style={{
+        width:size, height:size, borderRadius:"50%",
+        border:"1.5px solid #ddd", overflow:"hidden",
+        flexShrink:0, boxShadow:"0 1px 5px rgba(0,0,0,0.12)",
+      }}>
+        {cloned}
+      </div>
+    );
+  }
+  return (
+    <div style={{
+      width:size, height:size, borderRadius:"50%",
+      border:"1.5px solid #ddd", overflow:"hidden",
+      flexShrink:0, boxShadow:"0 1px 5px rgba(0,0,0,0.12)",
+      background:"#eee", display:"flex", alignItems:"center", justifyContent:"center",
+      fontSize:size*0.5
+    }}>
+      {emoji||"🏳️"}
+    </div>
+  );
+};
+// ─── TELA: ESPECIAIS ──────────────────────────────────────────────────────────
+const SpecialScreen = ({ stickers, onToggle, onToggleRep, onBack }) => {
+  return (
+    <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
+      <div style={{background:"#fff",borderBottom:"1px solid #ebebeb",padding:"12px 16px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <FlagBadge emoji="⭐" size={36}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:15,fontWeight:700,color:"#111"}}>Figurinhas Especiais</div>
+            <div style={{fontSize:11,color:"#aaa",marginTop:1}}>
+              {[...SPECIAL_GROUPS.FWC.ids,...SPECIAL_GROUPS.SEL.ids,...SPECIAL_GROUPS.CC.ids].filter(id=>stickers[id]?.owned).length} de {[...SPECIAL_GROUPS.FWC.ids,...SPECIAL_GROUPS.SEL.ids,...SPECIAL_GROUPS.CC.ids].length}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:"auto",padding:"14px 14px 24px"}}>
+        {Object.entries(SPECIAL_GROUPS).map(([sgKey, sg])=>{
+          const accentColor = sg.color;
+          return (
+            <div key={sgKey} style={{marginBottom:20}}>
+              <div style={{fontSize:9,fontWeight:700,letterSpacing:1.5,color:accentColor,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
+                <div style={{width:8,height:8,borderRadius:"50%",background:accentColor}}/>
+                {sg.label.toUpperCase()}
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                {sg.ids.map(id=>{
+                  const isOwned = !!stickers[id]?.owned;
+                  const qty = stickers[id]?.qty || 0;
+                  const isRep = qty > 0;
+                  return (
+                    <div key={id} style={{display:"flex",flexDirection:"column"}}>
+                      <button onClick={()=>onToggle(id)}
+                        style={{padding:"14px 6px 10px",
+                          borderRadius: isOwned ? "8px 8px 0 0" : "8px",
+                          border:"1px solid", borderBottom: isOwned ? "none" : "1px solid",
+                          borderColor: isOwned ? accentColor : "#e0e0e0",
+                          background: isOwned ? accentColor : "#fff",
+                          color: isOwned ? "#fff" : "#aaa",
+                          fontSize:10,fontWeight:700,letterSpacing:0.8,
+                          cursor:"pointer",transition:"all .15s",fontFamily:"Georgia,serif"}}>
+                        {id}
+                        {isOwned && <div style={{fontSize:8,opacity:0.7,marginTop:2}}>{specialLabel(id).replace(id+" ","")}</div>}
+                      </button>
+                      {isOwned && (
+                        <div style={{display:"flex",borderRadius:"0 0 8px 8px",overflow:"hidden",border:`1px solid ${accentColor}30`,borderTop:"none",background:"#fafafa"}}>
+                          <button onClick={()=>onToggleRep(id,-1)}
+                            style={{flex:1,padding:"5px",background:"#fafafa",border:"none",color:"#bbb",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                            <Icon name="minus" size={10} color="#bbb" sw={2.5}/>
+                          </button>
+                          <div style={{flex:1,padding:"5px",background:qty>0?accentColor+"18":"transparent",color:qty>0?accentColor:"#ccc",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Georgia,serif",borderLeft:`1px solid ${accentColor}20`,borderRight:`1px solid ${accentColor}20`}}>
+                            {qty > 0 ? `+${qty}` : "rep"}
+                          </div>
+                          <button onClick={()=>onToggleRep(id,1)}
+                            style={{flex:1,padding:"5px",background:"#fafafa",border:"none",color:"#bbb",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                            <Icon name="plus" size={10} color="#bbb" sw={2.5}/>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ─── TELA: GRID DE UMA SELEÇÃO ────────────────────────────────────────────────
 const TeamScreen = ({ team, stickers, onToggle, onToggleRep, onBack }) => {
   const ids = Array.from({length:20}, (_,i) => `${team.code} ${i+1}`);
   const owned = ids.filter(id => stickers[id]?.owned).length;
-  const repeated = ids.filter(id => stickers[id]?.repeated).length;
+  const totalRep = ids.reduce((acc,id) => acc + (stickers[id]?.qty||0), 0);
 
   return (
     <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
-      {/* Header */}
       <div style={{background:"#fff",borderBottom:"1px solid #ebebeb",padding:"12px 16px"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:28}}>{team.flag}</span>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <FlagBadge code={team.code} emoji={team.flag} size={40}/>
           <div style={{flex:1}}>
-            <div style={{fontSize:15,fontWeight:700,color:"#111",letterSpacing:0.3}}>{team.name}</div>
-            <div style={{fontSize:11,color:"#aaa",marginTop:1}}>
-              {owned} de 20 · {repeated} repetida{repeated!==1?"s":""}
+            <div style={{fontSize:15,fontWeight:700,color:"#111"}}>{team.name} <span style={{color:"#bbb",fontWeight:400,fontSize:12}}>({team.code})</span></div>
+            <div style={{fontSize:11,color:"#aaa",marginTop:2}}>
+              {owned} de 20 · {totalRep} repetida{totalRep!==1?"s":""}
             </div>
           </div>
         </div>
@@ -160,48 +380,45 @@ const TeamScreen = ({ team, stickers, onToggle, onToggleRep, onBack }) => {
           <span style={{fontSize:11,fontWeight:700,color:"#111",flexShrink:0}}>{Math.round((owned/20)*100)}%</span>
         </div>
         <button onClick={()=>ids.forEach(id=>{if(!stickers[id]?.owned) onToggle(id)})}
-          style={{marginTop:10,width:"100%",padding:"9px",background:"none",
-            border:"1px solid #e0e0e0",borderRadius:6,fontSize:11,fontWeight:600,
-            color:"#888",cursor:"pointer",letterSpacing:0.5}}>
+          style={{marginTop:10,width:"100%",padding:"9px",background:"none",border:"1px solid #e0e0e0",borderRadius:6,fontSize:11,fontWeight:600,color:"#888",cursor:"pointer",letterSpacing:0.5}}>
           Marcar todas
         </button>
       </div>
 
-      {/* Grid */}
       <div style={{flex:1,overflowY:"auto",padding:"14px 14px 24px"}}>
         <div style={{fontSize:9,color:"#bbb",letterSpacing:1.5,fontWeight:700,marginBottom:12}}>
-          TOQUE PARA MARCAR QUE VOCÊ TEM
+          TOQUE PARA MARCAR QUE VOCÊ TEM · USE + / − PARA REPETIDAS
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
           {ids.map(id => {
             const isOwned = !!stickers[id]?.owned;
-            const isRep   = !!stickers[id]?.repeated;
+            const qty = stickers[id]?.qty || 0;
             return (
-              <div key={id} style={{display:"flex",flexDirection:"column",gap:0}}>
-                {/* Botão principal — marcar que tem */}
+              <div key={id} style={{display:"flex",flexDirection:"column"}}>
                 <button onClick={()=>onToggle(id)}
-                  style={{padding:"16px 6px",borderRadius: isOwned ? "8px 8px 0 0" : "8px",
-                    border:"1px solid", borderBottom: isOwned ? "none" : "1px solid",
-                    borderColor: isOwned ? "#111" : "#e0e0e0",
-                    background: isOwned ? "#111" : "#fff",
-                    color: isOwned ? "#fff" : "#aaa",
+                  style={{padding:"16px 6px",borderRadius:isOwned?"8px 8px 0 0":"8px",
+                    border:"1px solid", borderBottom:isOwned?"none":"1px solid",
+                    borderColor:isOwned?"#111":"#e0e0e0",
+                    background:isOwned?"#111":"#fff",
+                    color:isOwned?"#fff":"#aaa",
                     fontSize:11,fontWeight:700,letterSpacing:1,
-                    cursor:"pointer",transition:"all .15s",
-                    fontFamily:"Georgia,serif"}}>
+                    cursor:"pointer",transition:"all .15s",fontFamily:"Georgia,serif"}}>
                   {id}
                 </button>
-                {/* Botão repetida — só aparece quando tem */}
                 {isOwned && (
-                  <button onClick={()=>onToggleRep(id)}
-                    style={{padding:"6px",borderRadius:"0 0 8px 8px",
-                      border:"1px solid #111",borderTop:"1px solid #333",
-                      background: isRep ? "#333" : "#1a1a1a",
-                      color: isRep ? "#fff" : "rgba(255,255,255,0.4)",
-                      fontSize:9,fontWeight:700,letterSpacing:0.8,
-                      cursor:"pointer",transition:"all .15s",
-                      fontFamily:"Georgia,serif"}}>
-                    {isRep ? "↺ repetida" : "repetida?"}
-                  </button>
+                  <div style={{display:"flex",borderRadius:"0 0 8px 8px",overflow:"hidden",border:"1px solid #e0e0e0",borderTop:"none",background:"#fafafa"}}>
+                    <button onClick={()=>onToggleRep(id,-1)}
+                      style={{flex:1,padding:"6px",background:"#fafafa",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <Icon name="minus" size={10} color="#bbb" sw={2.5}/>
+                    </button>
+                    <div style={{flex:1,background:qty>0?"#f0f0f0":"transparent",color:qty>0?"#333":"#ccc",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Georgia,serif",borderLeft:"1px solid #e8e8e8",borderRight:"1px solid #e8e8e8"}}>
+                      {qty > 0 ? `+${qty}` : "rep"}
+                    </div>
+                    <button onClick={()=>onToggleRep(id,1)}
+                      style={{flex:1,padding:"6px",background:"#fafafa",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <Icon name="plus" size={10} color="#bbb" sw={2.5}/>
+                    </button>
+                  </div>
                 )}
               </div>
             );
@@ -212,26 +429,28 @@ const TeamScreen = ({ team, stickers, onToggle, onToggleRep, onBack }) => {
   );
 };
 
-// ─── TELA: LISTA DE GRUPOS E SELEÇÕES ────────────────────────────────────────
+// ─── ABA ÁLBUM ────────────────────────────────────────────────────────────────
 const AlbumTab = ({ stickers, onSelectTeam }) => {
-  const [openGroups, setOpenGroups] = useState({"A":true,"B":true});
+  const [openGroups, setOpenGroups] = useState({A:true,B:true});
   const [search, setSearch] = useState("");
+  const toggleGroup = g => setOpenGroups(prev=>({...prev,[g]:!prev[g]}));
 
-  const toggleGroup = g => setOpenGroups(prev => ({...prev,[g]:!prev[g]}));
+  const totalRep = Object.values(stickers).reduce((acc,s)=>acc+(s.qty||0),0);
 
-  const ownedTotal = Object.values(stickers).filter(s=>s.owned).length;
-  const pct = Math.round((ownedTotal/TOTAL)*100);
-
-  const filteredGroups = useMemo(() => {
+  const filteredGroups = useMemo(()=>{
     if (!search.trim()) return GROUPS;
     const q = search.toLowerCase();
-    const result = {};
-    Object.entries(GROUPS).forEach(([g, teams]) => {
-      const filtered = teams.filter(t => t.name.toLowerCase().includes(q) || t.code.toLowerCase().includes(q));
-      if (filtered.length) result[g] = filtered;
+    const r={};
+    Object.entries(GROUPS).forEach(([g,teams])=>{
+      const f=teams.filter(t=>t.name.toLowerCase().includes(q)||t.code.toLowerCase().includes(q));
+      if(f.length) r[g]=f;
     });
-    return result;
-  }, [search]);
+    return r;
+  },[search]);
+
+  const specialOwned = [...SPECIAL_GROUPS.FWC.ids,...SPECIAL_GROUPS.SEL.ids,...SPECIAL_GROUPS.CC.ids].filter(id=>stickers[id]?.owned).length;
+  const specialTotal = [...SPECIAL_GROUPS.FWC.ids,...SPECIAL_GROUPS.SEL.ids,...SPECIAL_GROUPS.CC.ids].length;
+  const specialRep = [...SPECIAL_GROUPS.FWC.ids,...SPECIAL_GROUPS.SEL.ids,...SPECIAL_GROUPS.CC.ids].reduce((acc,id)=>acc+(stickers[id]?.qty||0),0);
 
   return (
     <div style={{padding:"0 0 20px"}}>
@@ -241,99 +460,105 @@ const AlbumTab = ({ stickers, onSelectTeam }) => {
           <div style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",opacity:0.3}}>
             <Icon name="search" size={14} color="#111"/>
           </div>
-          <input style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,
-            padding:"10px 12px 10px 32px",color:"#111",fontFamily:"Georgia,serif",
-            fontSize:13,outline:"none",width:"100%",letterSpacing:0.3}}
+          <input style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:"10px 12px 10px 32px",color:"#111",fontFamily:"Georgia,serif",fontSize:13,outline:"none",width:"100%",letterSpacing:0.3}}
             placeholder="Buscar seleção..." value={search} onChange={e=>setSearch(e.target.value)}/>
         </div>
       </div>
 
+      {/* Estatísticas rápidas */}
+      {!search && (
+        <div style={{margin:"12px 14px 0",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:"10px 12px",textAlign:"center"}}>
+            <div style={{fontSize:20,fontWeight:800,color:"#111",fontFamily:"Georgia,serif"}}>{Object.values(stickers).filter(s=>s.owned).length}</div>
+            <div style={{fontSize:10,color:"#aaa",marginTop:2}}>tenho</div>
+          </div>
+          <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:"10px 12px",textAlign:"center"}}>
+            <div style={{fontSize:20,fontWeight:800,color:"#c9a84c",fontFamily:"Georgia,serif"}}>{totalRep}</div>
+            <div style={{fontSize:10,color:"#aaa",marginTop:2}}>repetidas</div>
+          </div>
+        </div>
+      )}
+
       {/* Especiais */}
       {!search && (
         <div style={{margin:"12px 14px 0"}}>
-          <button onClick={()=>onSelectTeam({name:"Especiais",code:"FWC",flag:"★"}, "FWC")}
-            style={{width:"100%",background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,
-              padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <div style={{width:36,height:36,background:"#111",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <svg viewBox="0 0 80 90" width="20" fill="none">
-                  <path d="M22 10 C22 10 20 26 22 34 C24 42 32 46 40 46 C48 46 56 42 58 34 C60 26 58 10 58 10 Z" fill="#fff" opacity="0.9"/>
-                  <path d="M22 16 C17 16 13 20 13 25 C13 30 17 34 22 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-                  <path d="M58 16 C63 16 67 20 67 25 C67 30 63 34 58 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-                  <rect x="36" y="46" width="8" height="14" rx="2" fill="#fff"/>
-                  <rect x="28" y="60" width="24" height="4" rx="2" fill="#fff"/>
-                  <polygon points="40,2 42,7.5 48,7.5 43.5,11 45.5,16.5 40,13 34.5,16.5 36.5,11 32,7.5 38,7.5" fill="#fff"/>
-                </svg>
-              </div>
+          <button onClick={()=>onSelectTeam({name:"Especiais",code:"FWC",flag:"⭐",isSpecial:true})}
+            style={{width:"100%",background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <FlagBadge emoji="⭐" size={38}/>
               <div style={{textAlign:"left"}}>
-                <div style={{fontSize:13,fontWeight:700,color:"#111"}}>Especiais</div>
+                <div style={{fontSize:13,fontWeight:700,color:"#111"}}>
+                  Especiais <span style={{color:"#bbb",fontWeight:400,fontSize:11}}>(FWC · CC)</span>
+                </div>
                 <div style={{fontSize:11,color:"#aaa",marginTop:1}}>
-                  {Object.keys(stickers).filter(id=>id.startsWith("FWC")&&stickers[id].owned).length} de 6
+                  {specialOwned} de {specialTotal}
+                  {specialRep>0 && <span style={{color:"#c9a84c",marginLeft:6}}>· {specialRep} repetida{specialRep!==1?"s":""}</span>}
                 </div>
               </div>
             </div>
-            <Icon name="right" size={16} color="#ccc" sw={2}/>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:50}}><Bar value={specialOwned} total={specialTotal} height={2} color="#c9a84c"/></div>
+              <Icon name="right" size={14} color="#ccc" sw={2}/>
+            </div>
           </button>
         </div>
       )}
 
       {/* Grupos */}
       <div style={{marginTop:12}}>
-        {Object.entries(filteredGroups).map(([g, teams]) => {
-          const groupIds = teams.flatMap(t => Array.from({length:20},(_,i)=>`${t.code} ${i+1}`));
+        {Object.entries(filteredGroups).map(([g,teams])=>{
+          const groupIds = teams.flatMap(t=>Array.from({length:20},(_,i)=>`${t.code} ${i+1}`));
           const groupOwned = groupIds.filter(id=>stickers[id]?.owned).length;
-          const groupTotal = groupIds.length;
-          const isOpen = openGroups[g] !== false;
-
+          const groupRep = groupIds.reduce((acc,id)=>acc+(stickers[id]?.qty||0),0);
+          const isOpen = openGroups[g]!==false;
           return (
             <div key={g} style={{margin:"0 14px 10px"}}>
-              {/* Header do grupo */}
               <button onClick={()=>toggleGroup(g)}
                 style={{width:"100%",background:"#fff",border:"1px solid #e8e8e8",
                   borderRadius:isOpen?"8px 8px 0 0":"8px",
                   padding:"12px 14px",display:"flex",alignItems:"center",
-                  justifyContent:"space-between",cursor:"pointer",borderBottom:isOpen?"1px solid #f0f0f0":"1px solid #e8e8e8"}}>
+                  justifyContent:"space-between",cursor:"pointer",
+                  borderBottom:isOpen?"1px solid #f0f0f0":"1px solid #e8e8e8"}}>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{fontSize:11,fontWeight:800,color:"#111",letterSpacing:1,
-                    width:28,height:28,background:"#f4f4f4",borderRadius:6,
-                    display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <div style={{fontSize:11,fontWeight:800,color:"#111",letterSpacing:1,width:28,height:28,background:"#f4f4f4",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center"}}>
                     {g}
                   </div>
                   <div style={{textAlign:"left"}}>
                     <div style={{fontSize:12,fontWeight:700,color:"#111"}}>Grupo {g}</div>
-                    <div style={{fontSize:10,color:"#aaa"}}>{groupOwned} de {groupTotal}</div>
+                    <div style={{fontSize:10,color:"#aaa"}}>
+                      {groupOwned} de {groupIds.length}
+                      {groupRep>0 && <span style={{color:"#c9a84c",marginLeft:6}}>· {groupRep} rep.</span>}
+                    </div>
                   </div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{width:60}}>
-                    <Bar value={groupOwned} total={groupTotal} height={2}/>
-                  </div>
+                  <div style={{width:60}}><Bar value={groupOwned} total={groupIds.length} height={2}/></div>
                   <Icon name={isOpen?"down":"right"} size={14} color="#ccc" sw={2}/>
                 </div>
               </button>
-
-              {/* Times do grupo */}
               {isOpen && (
-                <div style={{background:"#fff",border:"1px solid #e8e8e8",borderTop:"none",
-                  borderRadius:"0 0 8px 8px",overflow:"hidden"}}>
-                  {teams.map((team, idx) => {
-                    const ids = Array.from({length:20},(_,i)=>`${team.code} ${i+1}`);
-                    const owned = ids.filter(id=>stickers[id]?.owned).length;
+                <div style={{background:"#fff",border:"1px solid #e8e8e8",borderTop:"none",borderRadius:"0 0 8px 8px",overflow:"hidden"}}>
+                  {teams.map((team,idx)=>{
+                    const tIds = Array.from({length:20},(_,i)=>`${team.code} ${i+1}`);
+                    const tOwned = tIds.filter(id=>stickers[id]?.owned).length;
+                    const tRep = tIds.reduce((acc,id)=>acc+(stickers[id]?.qty||0),0);
                     return (
-                      <button key={team.code} onClick={()=>onSelectTeam(team, g)}
+                      <button key={team.code} onClick={()=>onSelectTeam(team)}
                         style={{width:"100%",background:"#fff",border:"none",
-                          borderTop: idx > 0 ? "1px solid #f5f5f5" : "none",
-                          padding:"12px 14px",display:"flex",alignItems:"center",
-                          cursor:"pointer",gap:12}}>
-                        <span style={{fontSize:22,flexShrink:0}}>{team.flag}</span>
+                          borderTop:idx>0?"1px solid #f5f5f5":"none",
+                          padding:"12px 14px",display:"flex",alignItems:"center",cursor:"pointer",gap:12}}>
+                        <FlagBadge code={team.code} emoji={team.flag} size={36}/>
                         <div style={{flex:1,textAlign:"left"}}>
-                          <div style={{fontSize:12,fontWeight:600,color:"#111"}}>{team.name} <span style={{color:"#bbb",fontWeight:400,fontSize:11}}>({team.code})</span></div>
-                          <div style={{fontSize:10,color:"#aaa",marginTop:1}}>{owned} de 20</div>
+                          <div style={{fontSize:12,fontWeight:600,color:"#111"}}>
+                            {team.name} <span style={{color:"#ccc",fontWeight:400,fontSize:10}}>({team.code})</span>
+                          </div>
+                          <div style={{fontSize:10,color:"#aaa",marginTop:1}}>
+                            {tOwned} de 20
+                            {tRep>0 && <span style={{color:"#c9a84c",marginLeft:6}}>· {tRep} rep.</span>}
+                          </div>
                         </div>
                         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-                          <div style={{width:50}}>
-                            <Bar value={owned} total={20} height={2}/>
-                          </div>
+                          <div style={{width:50}}><Bar value={tOwned} total={20} height={2}/></div>
                           <Icon name="right" size={14} color="#ddd" sw={2}/>
                         </div>
                       </button>
@@ -352,42 +577,36 @@ const AlbumTab = ({ stickers, onSelectTeam }) => {
 // ─── ABA STATS ────────────────────────────────────────────────────────────────
 const StatsTab = ({ stickers }) => {
   const owned = Object.values(stickers).filter(s=>s.owned).length;
-  const rep   = Object.values(stickers).filter(s=>s.owned&&s.repeated).length;
-  const pct   = Math.round((owned/TOTAL)*100);
-
+  const totalRep = Object.values(stickers).reduce((acc,s)=>acc+(s.qty||0),0);
+  const pct = Math.round((owned/TOTAL)*100);
   return (
     <div style={{padding:"12px 14px 20px"}}>
-      {/* Números principais */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
-        {[{l:"Total",v:TOTAL},{l:"Tenho",v:owned},{l:"Faltam",v:TOTAL-owned},{l:"Repetidas",v:rep}].map(s=>(
+        {[{l:"Total",v:TOTAL,c:"#111"},{l:"Tenho",v:owned,c:"#111"},{l:"Faltam",v:TOTAL-owned,c:"#111"},{l:"Repetidas",v:totalRep,c:"#c9a84c"}].map(s=>(
           <div key={s.l} style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:"14px 12px",textAlign:"center"}}>
-            <div style={{fontSize:26,fontWeight:800,color:"#111",fontFamily:"Georgia,serif"}}>{s.v}</div>
-            <div style={{fontSize:10,color:"#aaa",marginTop:4,letterSpacing:0.5}}>{s.l}</div>
+            <div style={{fontSize:26,fontWeight:800,color:s.c,fontFamily:"Georgia,serif"}}>{s.v}</div>
+            <div style={{fontSize:10,color:"#aaa",marginTop:4}}>{s.l}</div>
           </div>
         ))}
       </div>
-
-      {/* Progresso */}
       <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:14,marginBottom:10}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10}}>
-          <span style={{fontSize:12,fontWeight:700,color:"#111",letterSpacing:0.5}}>Progresso geral</span>
+          <span style={{fontSize:12,fontWeight:700,color:"#111"}}>Progresso geral</span>
           <span style={{fontSize:20,fontWeight:800,color:"#111",fontFamily:"Georgia,serif"}}>{pct}%</span>
         </div>
         <Bar value={owned} total={TOTAL} height={3}/>
-        <div style={{fontSize:10,color:"#bbb",marginTop:8}}>{owned} de {TOTAL} figurinhas</div>
+        <div style={{fontSize:10,color:"#bbb",marginTop:8}}>{owned} de {TOTAL}</div>
       </div>
-
-      {/* Por grupo */}
       <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:14}}>
-        <div style={{fontSize:11,fontWeight:700,color:"#111",marginBottom:12,letterSpacing:0.5}}>Por grupo</div>
+        <div style={{fontSize:11,fontWeight:700,color:"#111",marginBottom:12}}>Por grupo</div>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          {Object.entries(GROUPS).map(([g, teams])=>{
-            const ids = teams.flatMap(t=>Array.from({length:20},(_,i)=>`${t.code} ${i+1}`));
-            const o = ids.filter(id=>stickers[id]?.owned).length;
-            const p = Math.round((o/ids.length)*100);
+          {Object.entries(GROUPS).map(([g,teams])=>{
+            const ids=teams.flatMap(t=>Array.from({length:20},(_,i)=>`${t.code} ${i+1}`));
+            const o=ids.filter(id=>stickers[id]?.owned).length;
+            const p=Math.round((o/ids.length)*100);
             return (
               <div key={g}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,fontSize:11}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,fontSize:11}}>
                   <span style={{fontWeight:600,color:"#333"}}>Grupo {g}</span>
                   <span style={{color:"#aaa"}}>{o}/{ids.length} <b style={{color:"#111"}}>{p}%</b></span>
                 </div>
@@ -402,126 +621,142 @@ const StatsTab = ({ stickers }) => {
 };
 
 // ─── ABA TROCAR ───────────────────────────────────────────────────────────────
-const TrocarTab = ({ stickers, onToggleRep }) => {
-  const [copied, setCopied] = useState(false);
+const TrocarTab = ({ stickers, onToggleRep, onShare }) => {
+  const [search, setSearch] = useState("");
 
   async function handleShare() {
     const url = `${window.location.origin}/?user=jrsabel`;
-    const text = `Minhas figurinhas repetidas da Copa 2026 — veja quais tenho para trocar!`;
+    const text = "Minhas figurinhas repetidas da Copa 2026 — veja quais tenho para trocar!";
     if (navigator.share) {
-      try {
-        await navigator.share({ title: "Copa 2026 — Figurinhas Repetidas", text, url });
-      } catch (e) {}
+      try { await navigator.share({title:"Copa 2026 — Figurinhas Repetidas",text,url}); } catch(e){}
     } else {
-      // Fallback: copia o link
-      navigator.clipboard.writeText(url).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
-      });
+      navigator.clipboard.writeText(url);
     }
   }
-  const rep = Object.entries(stickers)
-    .filter(([,v])=>v.owned&&v.repeated)
-    .map(([id])=>({id, ...ALL[id]}))
-    .filter(Boolean);
+
+  // Todas as repetidas com qty > 0
+  const rep = useMemo(()=>
+    Object.entries(stickers)
+      .filter(([,v])=>v.owned && (v.qty||0)>0)
+      .map(([id,v])=>({id, qty:v.qty, ...ALL[id]}))
+      .filter(r=>r.group)
+  ,[stickers]);
+
+  const totalRep = rep.reduce((acc,r)=>acc+r.qty,0);
+
+  const filtered = useMemo(()=>{
+    if (!search.trim()) return rep;
+    const q = search.toUpperCase();
+    return rep.filter(r=>r.id.includes(q)||(r.team||"").toUpperCase().includes(q));
+  },[rep,search]);
 
   const byGroup = useMemo(()=>{
     const m={};
-    rep.forEach(s=>{if(!m[s.group])m[s.group]=[];m[s.group].push(s)});
+    filtered.forEach(s=>{if(!m[s.group])m[s.group]=[];m[s.group].push(s)});
     return m;
-  },[rep]);
+  },[filtered]);
 
   return (
     <div style={{padding:"12px 14px 20px"}}>
+      {/* Compartilhar */}
       <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:16,marginBottom:12}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#111",marginBottom:3,letterSpacing:0.3}}>Página pública de trocas</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#111",marginBottom:3}}>Página pública de trocas</div>
         <div style={{fontSize:11,color:"#aaa",marginBottom:12}}>Compartilhe para trocar figurinhas</div>
-        <div style={{background:"#f7f7f7",borderRadius:6,padding:"9px 12px",fontSize:10,
-          color:"#888",marginBottom:12,fontFamily:"monospace",wordBreak:"break-all"}}>
+        <div style={{background:"#f7f7f7",borderRadius:6,padding:"9px 12px",fontSize:10,color:"#888",marginBottom:12,fontFamily:"monospace",wordBreak:"break-all"}}>
           albumcopa26.vercel.app/?user=jrsabel
         </div>
-        <button onClick={handleShare}
-          style={{width:"100%",padding:"11px",background:copied?"#f7f7f7":"#111",
-            border:`1px solid ${copied?"#e0e0e0":"#111"}`,borderRadius:6,
-            color:copied?"#111":"#fff",fontSize:12,fontWeight:600,
-            fontFamily:"Georgia,serif",cursor:"pointer",
-            display:"flex",alignItems:"center",justifyContent:"center",gap:8,letterSpacing:0.3}}>
-          <Icon name={copied?"check":"copy"} size={13} color={copied?"#111":"#fff"} sw={2}/>
-          {copied?"Link copiado!":"Compartilhar minhas repetidas"}
+        <button onClick={onShare||handleShare}
+          style={{width:"100%",padding:"11px",background:"#111",border:"1px solid #111",borderRadius:6,color:"#fff",fontSize:12,fontWeight:600,fontFamily:"Georgia,serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,letterSpacing:0.3}}>
+          <Icon name="share" size={13} color="#fff" sw={2}/>
+          Compartilhar minhas repetidas
         </button>
       </div>
 
-      <div style={{fontSize:10,fontWeight:700,color:"#aaa",letterSpacing:1.5,marginBottom:10}}>
-        SUAS REPETIDAS ({rep.length})
+      {/* Título + busca */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+        <div style={{fontSize:10,fontWeight:700,color:"#aaa",letterSpacing:1.5}}>
+          REPETIDAS
+        </div>
+        <div style={{fontSize:13,fontWeight:800,color:"#c9a84c",fontFamily:"Georgia,serif"}}>
+          {totalRep} total
+        </div>
       </div>
 
-      {rep.length===0
-        ? <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,
-            padding:28,textAlign:"center",color:"#bbb",fontSize:12,fontFamily:"Georgia,serif"}}>
+      {/* Busca repetidas */}
+      <div style={{position:"relative",marginBottom:12}}>
+        <div style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",opacity:0.3}}>
+          <Icon name="search" size={13} color="#111"/>
+        </div>
+        <input style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:"9px 12px 9px 30px",color:"#111",fontFamily:"Georgia,serif",fontSize:12,outline:"none",width:"100%"}}
+          placeholder="Buscar figurinha repetida..." value={search} onChange={e=>setSearch(e.target.value)}/>
+      </div>
+
+      {filtered.length===0
+        ? <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:28,textAlign:"center",color:"#bbb",fontSize:12,fontFamily:"Georgia,serif"}}>
             Nenhuma repetida ainda
           </div>
-        : Object.entries(byGroup).map(([g, items])=>(
-          <div key={g} style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:14,marginBottom:8}}>
-            <div style={{fontSize:10,fontWeight:700,color:"#aaa",letterSpacing:1,marginBottom:10}}>
-              {g==="FWC"?"ESPECIAIS":`GRUPO ${g}`}
-            </div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-              {items.map(s=>(
-                <div key={s.id} style={{display:"flex",flexDirection:"column",width:"calc(33.33% - 6px)"}}>
-                  {/* Chip da figurinha */}
-                  <div style={{display:"flex",alignItems:"center",gap:6,
-                    padding:"10px 8px",borderRadius:"7px 7px 0 0",
-                    border:"1px solid #111",borderBottom:"none",
-                    background:"#111"}}>
-                    <span style={{fontSize:15}}>{s.flag}</span>
-                    <span style={{fontSize:10,fontWeight:700,fontFamily:"Georgia,serif",
-                      color:"#fff",letterSpacing:0.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.id}</span>
-                  </div>
-                  {/* Botão desmarcar */}
-                  <button onClick={()=>onToggleRep(s.id)}
-                    style={{padding:"6px 4px",borderRadius:"0 0 7px 7px",
-                      border:"1px solid #111",borderTop:"1px solid #2a2a2a",
-                      background:"#1a1a1a",color:"rgba(255,255,255,0.45)",
-                      fontSize:9,fontWeight:700,letterSpacing:0.5,
-                      cursor:"pointer",fontFamily:"Georgia,serif",
-                      display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
-                    <Icon name="check" size={9} color="rgba(255,255,255,0.3)" sw={2.5}/>
-                    desmarcar
-                  </button>
+        : Object.entries(byGroup).map(([g,items])=>{
+            const isCC = g==="ESPECIAL" && items.some(i=>SPECIAL_GROUPS.CC.ids.includes(i.id));
+            const isFWC = g==="ESPECIAL";
+            return (
+              <div key={g} style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:14,marginBottom:8}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#aaa",letterSpacing:1,marginBottom:10}}>
+                  {g==="ESPECIAL"?"ESPECIAIS":`GRUPO ${g}`}
                 </div>
-              ))}
-            </div>
-          </div>
-        ))
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {items.map(s=>{
+                    const accentColor = specialColor(s.id) || "#111";
+                    return (
+                      <div key={s.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:"1px solid #f0f0f0",background:"#fafafa"}}>
+                        {s.code && <FlagBadge code={s.code} emoji={s.flag} size={28}/>}
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:11,fontWeight:700,color:"#111",fontFamily:"Georgia,serif",letterSpacing:0.5}}>{s.id}</div>
+                          {s.team && <div style={{fontSize:9,color:"#aaa",marginTop:1}}>{s.team}</div>}
+                        </div>
+                        {/* Controles − qty + */}
+                        <div style={{display:"flex",alignItems:"center",gap:0,borderRadius:6,overflow:"hidden",border:"1px solid #e0e0e0"}}>
+                          <button onClick={()=>onToggleRep(s.id,-1)}
+                            style={{padding:"6px 9px",background:"#fff",border:"none",cursor:"pointer",display:"flex",alignItems:"center"}}>
+                            <Icon name="minus" size={11} color="#666" sw={2.5}/>
+                          </button>
+                          <div style={{padding:"6px 10px",background:accentColor,color:"#fff",fontSize:12,fontWeight:800,fontFamily:"Georgia,serif",minWidth:32,textAlign:"center"}}>
+                            {s.qty}
+                          </div>
+                          <button onClick={()=>onToggleRep(s.id,1)}
+                            style={{padding:"6px 9px",background:"#fff",border:"none",cursor:"pointer",display:"flex",alignItems:"center"}}>
+                            <Icon name="plus" size={11} color="#666" sw={2.5}/>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })
       }
     </div>
   );
 };
 
 // ─── ABA PERFIL ───────────────────────────────────────────────────────────────
-const PerfilTab = ({ onSignOut }) => (
+const PerfilTab = ({ username, email, onSignOut }) => (
   <div style={{padding:"12px 14px 20px"}}>
-    <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,
-      padding:24,textAlign:"center",marginBottom:10}}>
-      <div style={{width:56,height:56,background:"#111",borderRadius:"50%",
-        display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
+    <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:24,textAlign:"center",marginBottom:10}}>
+      <div style={{width:56,height:56,background:"#111",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
         <Icon name="user" size={22} color="#fff" sw={1.5}/>
       </div>
-      <div style={{fontSize:16,fontWeight:700,color:"#111",fontFamily:"Georgia,serif"}}>jrsabel</div>
-      <div style={{fontSize:11,color:"#aaa",marginTop:3}}>juniorsabel@gmail.com</div>
+      <div style={{fontSize:16,fontWeight:700,color:"#111",fontFamily:"Georgia,serif"}}>{ username || "jrsabel" }</div>
+      <div style={{fontSize:11,color:"#aaa",marginTop:3}}>{ email || "" }</div>
     </div>
-    <button style={{width:"100%",padding:"13px",background:"#fff",
-      border:"1px solid #e8e8e8",borderRadius:8,color:"#aaa",
-      fontSize:11,fontWeight:600,fontFamily:"Georgia,serif",
-      cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,letterSpacing:0.5}}>
-      <Icon name="logout" size={13} color="#aaa" sw={2}/>
-      Sair da conta
+    <button onClick={onSignOut} style={{width:"100%",padding:"13px",background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,color:"#aaa",fontSize:11,fontWeight:600,fontFamily:"Georgia,serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,letterSpacing:0.5}}>
+      <Icon name="logout" size={13} color="#aaa" sw={2}/> Sair da conta
     </button>
   </div>
 );
 
 
-// ─── AUTH SCREEN ──────────────────────────────────────────────────────────────
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
 function AuthScreen({ onLogin }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -550,20 +785,12 @@ function AuthScreen({ onLogin }) {
   }
 
   const inp = { width:"100%", padding:"11px", border:"1px solid #e8e8e8", borderRadius:7, fontSize:14, outline:"none", color:"#111", fontFamily:"Georgia,serif" };
-
   return (
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f4f4f4",padding:"24px 20px"}}>
       <div style={{width:"100%",maxWidth:380}}>
         <div style={{textAlign:"center",marginBottom:28}}>
           <div style={{width:44,height:44,background:"#111",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
-            <svg viewBox="0 0 80 90" width="24" fill="none">
-              <path d="M22 10 C22 10 20 26 22 34 C24 42 32 46 40 46 C48 46 56 42 58 34 C60 26 58 10 58 10 Z" fill="#fff" opacity="0.9"/>
-              <path d="M22 16 C17 16 13 20 13 25 C13 30 17 34 22 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-              <path d="M58 16 C63 16 67 20 67 25 C67 30 63 34 58 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-              <rect x="36" y="46" width="8" height="14" rx="2" fill="#fff"/>
-              <rect x="28" y="60" width="24" height="4" rx="2" fill="#fff"/>
-              <polygon points="40,2 42,7.5 48,7.5 43.5,11 45.5,16.5 40,13 34.5,16.5 36.5,11 32,7.5 38,7.5" fill="#fff"/>
-            </svg>
+            <svg viewBox="0 0 80 90" width="24" fill="none"><path d="M22 10 C22 10 20 26 22 34 C24 42 32 46 40 46 C48 46 56 42 58 34 C60 26 58 10 58 10 Z" fill="#fff" opacity="0.9"/><path d="M22 16 C17 16 13 20 13 25 C13 30 17 34 22 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/><path d="M58 16 C63 16 67 20 67 25 C67 30 63 34 58 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/><rect x="36" y="46" width="8" height="14" rx="2" fill="#fff"/><rect x="28" y="60" width="24" height="4" rx="2" fill="#fff"/><polygon points="40,2 42,7.5 48,7.5 43.5,11 45.5,16.5 40,13 34.5,16.5 36.5,11 32,7.5 38,7.5" fill="#fff"/></svg>
           </div>
           <div style={{fontSize:18,fontWeight:700,color:"#111",fontFamily:"Georgia,serif"}}>Copa 2026</div>
           <div style={{fontSize:11,color:"#aaa",marginTop:2,letterSpacing:1}}>ÁLBUM DE FIGURINHAS</div>
@@ -598,7 +825,6 @@ function PublicRepeatedPage({ username }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatedAt, setUpdatedAt] = useState(null);
-
   useEffect(() => {
     supabase.from("public_repeated").select("repeated_ids,updated_at").eq("username", username).single()
       .then(({ data }) => {
@@ -606,10 +832,8 @@ function PublicRepeatedPage({ username }) {
         setLoading(false);
       });
   }, [username]);
-
   const rep = useMemo(() => rows.map(id=>({id,...ALL[id]})).filter(r=>r.group), [rows]);
   const byGroup = useMemo(() => { const m={}; rep.forEach(s=>{if(!m[s.group])m[s.group]=[];m[s.group].push(s)}); return m; }, [rep]);
-
   return (
     <div style={{maxWidth:700,margin:"0 auto",minHeight:"100vh",background:"#f4f4f4",fontFamily:"Georgia,serif"}}>
       <div style={{background:"#fff",borderBottom:"1px solid #e8e8e8",padding:"14px 20px",position:"sticky",top:0}}>
@@ -622,16 +846,17 @@ function PublicRepeatedPage({ username }) {
         </div>
       </div>
       <div style={{padding:"16px 20px 32px"}}>
-        {loading ? <div style={{textAlign:"center",padding:40,color:"#bbb",fontSize:13}}>Carregando...</div>
-        : rep.length===0 ? <div style={{textAlign:"center",padding:40,color:"#bbb",fontSize:13}}>Nenhuma repetida ainda</div>
-        : Object.entries(byGroup).map(([g,items])=>(
+        {loading?<div style={{textAlign:"center",padding:40,color:"#bbb",fontSize:13}}>Carregando...</div>
+        :rep.length===0?<div style={{textAlign:"center",padding:40,color:"#bbb",fontSize:13}}>Nenhuma repetida ainda</div>
+        :Object.entries(byGroup).map(([g,items])=>(
           <div key={g} style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:14,marginBottom:8}}>
-            <div style={{fontSize:10,fontWeight:700,color:"#aaa",letterSpacing:1,marginBottom:10}}>{g==="FWC"?"ESPECIAIS":`GRUPO ${g}`}</div>
+            <div style={{fontSize:10,fontWeight:700,color:"#aaa",letterSpacing:1,marginBottom:10}}>{g==="ESPECIAL"?"ESPECIAIS":`GRUPO ${g}`}</div>
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
               {items.map(s=>(
                 <div key={s.id} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:6,border:"1px solid #e8e8e8",background:"#f7f7f7"}}>
-                  <span style={{fontSize:14}}>{s.flag}</span>
+                  {s.code&&<FlagBadge code={s.code} emoji={s.flag} size={20}/>}
                   <span style={{fontSize:10,fontWeight:700,color:"#111",letterSpacing:0.5}}>{s.id}</span>
+                  {s.qty>1&&<span style={{fontSize:9,color:"#c9a84c",fontWeight:700}}>×{s.qty}</span>}
                 </div>
               ))}
             </div>
@@ -646,7 +871,6 @@ function PublicRepeatedPage({ username }) {
 export default function App() {
   const params = new URLSearchParams(window.location.search);
   const publicUser = params.get("user");
-
   const [session, setSession] = useState(undefined);
   const [stickers, setStickers] = useState({});
   const [tab, setTab] = useState("album");
@@ -661,16 +885,16 @@ export default function App() {
 
   useEffect(() => {
     if (!session) return;
-    supabase.from("stickers").select("sticker_id,owned,repeated").eq("user_id", session.user.id)
+    supabase.from("stickers").select("sticker_id,owned,repeated,qty").eq("user_id", session.user.id)
       .then(({ data }) => {
         const m = {};
-        data?.forEach(r => { m[r.sticker_id] = { owned: r.owned, repeated: r.repeated }; });
+        data?.forEach(r => { m[r.sticker_id] = { owned: r.owned, repeated: r.repeated, qty: r.qty||0 }; });
         setStickers(m);
       });
   }, [session]);
 
   const syncPublic = useCallback(async (updated) => {
-    const ids = Object.entries(updated).filter(([,v])=>v.owned&&v.repeated).map(([k])=>k);
+    const ids = Object.entries(updated).filter(([,v])=>v.owned&&(v.qty||0)>0).map(([k])=>k);
     const un = session.user.user_metadata?.username || session.user.email.split("@")[0];
     await supabase.from("public_repeated").upsert({ user_id:session.user.id, username:un, repeated_ids:ids, updated_at:new Date().toISOString() }, { onConflict:"user_id" });
   }, [session]);
@@ -678,51 +902,60 @@ export default function App() {
   const toggle = useCallback(async (id) => {
     const cur = stickers[id] || {};
     const next = { ...stickers };
-    if (cur.owned) { delete next[id]; } else { next[id] = { owned:true, repeated:false }; }
+    if (cur.owned) { delete next[id]; } else { next[id] = { owned:true, qty:0 }; }
     setStickers(next); setSaving(true);
-    await supabase.from("stickers").upsert({ user_id:session.user.id, sticker_id:id, owned:!!next[id]?.owned, repeated:false, updated_at:new Date().toISOString() }, { onConflict:"user_id,sticker_id" });
+    await supabase.from("stickers").upsert({ user_id:session.user.id, sticker_id:id, owned:!!next[id]?.owned, qty:0, updated_at:new Date().toISOString() }, { onConflict:"user_id,sticker_id" });
     await syncPublic(next); setSaving(false);
   }, [stickers, session, syncPublic]);
 
-  const toggleRep = useCallback(async (id) => {
+  const toggleRep = useCallback(async (id, delta) => {
     const cur = stickers[id] || {};
     if (!cur.owned) return;
-    const next = { ...stickers, [id]: { owned:true, repeated:!cur.repeated } };
+    const newQty = Math.max(0, (cur.qty||0) + delta);
+    const next = { ...stickers, [id]: { ...cur, qty: newQty } };
     setStickers(next); setSaving(true);
-    await supabase.from("stickers").upsert({ user_id:session.user.id, sticker_id:id, owned:true, repeated:!cur.repeated, updated_at:new Date().toISOString() }, { onConflict:"user_id,sticker_id" });
+    await supabase.from("stickers").upsert({ user_id:session.user.id, sticker_id:id, owned:true, qty:newQty, updated_at:new Date().toISOString() }, { onConflict:"user_id,sticker_id" });
     await syncPublic(next); setSaving(false);
   }, [stickers, session, syncPublic]);
 
   const username = session?.user?.user_metadata?.username || session?.user?.email?.split("@")[0] || "";
   const email = session?.user?.email || "";
   const owned = Object.values(stickers).filter(s=>s.owned).length;
+  const totalRep = Object.values(stickers).reduce((acc,s)=>acc+(s.qty||0),0);
   const pct = Math.round((owned/TOTAL)*100);
 
+  async function handleShare() {
+    const url = `${window.location.origin}/?user=${encodeURIComponent(username)}`;
+    const text = "Minhas figurinhas repetidas da Copa 2026 — veja quais tenho para trocar!";
+    if (navigator.share) { try { await navigator.share({title:"Copa 2026 — Figurinhas Repetidas",text,url}); } catch(e){} }
+    else { navigator.clipboard.writeText(url); }
+  }
+
   if (publicUser) return <PublicRepeatedPage username={publicUser}/>;
-  if (session === undefined) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f4f4f4",color:"#aaa",fontSize:13,fontFamily:"Georgia,serif"}}>Carregando...</div>;
-  if (!session) return <AuthScreen onLogin={()=>{}} />;
+  if (session===undefined) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f4f4f4",color:"#aaa",fontSize:13,fontFamily:"Georgia,serif"}}>Carregando...</div>;
+  if (!session) return <AuthScreen onLogin={()=>{}}/>;
 
-  const NAV = [{id:"album",icon:"album",label:"Álbum"},{id:"stats",icon:"chart",label:"Stats"},{id:"share",icon:"repeat",label:"Trocar"},{id:"profile",icon:"user",label:"Perfil"}];
-
-  const CupSVG = ({size=18}) => (
+  const CupSVG = ({size=18,color="#fff"}) => (
     <svg viewBox="0 0 80 90" width={size} fill="none">
-      <path d="M22 10 C22 10 20 26 22 34 C24 42 32 46 40 46 C48 46 56 42 58 34 C60 26 58 10 58 10 Z" fill="#fff" opacity="0.9"/>
-      <path d="M22 16 C17 16 13 20 13 25 C13 30 17 34 22 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-      <path d="M58 16 C63 16 67 20 67 25 C67 30 63 34 58 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-      <rect x="36" y="46" width="8" height="14" rx="2" fill="#fff"/>
-      <rect x="28" y="60" width="24" height="4" rx="2" fill="#fff"/>
-      <polygon points="40,2 42,7.5 48,7.5 43.5,11 45.5,16.5 40,13 34.5,16.5 36.5,11 32,7.5 38,7.5" fill="#fff"/>
+      <path d="M22 10 C22 10 20 26 22 34 C24 42 32 46 40 46 C48 46 56 42 58 34 C60 26 58 10 58 10 Z" fill={color} opacity="0.9"/>
+      <path d="M22 16 C17 16 13 20 13 25 C13 30 17 34 22 33" stroke={color} strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+      <path d="M58 16 C63 16 67 20 67 25 C67 30 63 34 58 33" stroke={color} strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+      <rect x="36" y="46" width="8" height="14" rx="2" fill={color}/>
+      <rect x="28" y="60" width="24" height="4" rx="2" fill={color}/>
+      <polygon points="40,2 42,7.5 48,7.5 43.5,11 45.5,16.5 40,13 34.5,16.5 36.5,11 32,7.5 38,7.5" fill={color}/>
     </svg>
   );
 
-    }
+  const NAV = [{id:"album",icon:"album",label:"Álbum"},{id:"stats",icon:"chart",label:"Stats"},{id:"share",icon:"repeat",label:"Trocar"},{id:"profile",icon:"user",label:"Perfil"}];
 
   const content = selectedTeam
-    ? <TeamScreen team={selectedTeam} stickers={stickers} onToggle={toggle} onToggleRep={toggleRep} onBack={()=>setSelectedTeam(null)}/>
+    ? selectedTeam.isSpecial
+      ? <SpecialScreen stickers={stickers} onToggle={toggle} onToggleRep={toggleRep} onBack={()=>setSelectedTeam(null)}/>
+      : <TeamScreen team={selectedTeam} stickers={stickers} onToggle={toggle} onToggleRep={toggleRep} onBack={()=>setSelectedTeam(null)}/>
     : <>
         {tab==="album"   && <AlbumTab stickers={stickers} onSelectTeam={t=>setSelectedTeam(t)}/>}
         {tab==="stats"   && <StatsTab stickers={stickers}/>}
-        {tab==="share"   && <TrocarTab stickers={stickers} onToggleRep={toggleRep}/>}
+        {tab==="share"   && <TrocarTab stickers={stickers} onToggleRep={toggleRep} onShare={handleShare}/>}
         {tab==="profile" && <PerfilTab username={username} email={email} onSignOut={()=>supabase.auth.signOut()}/>}
       </>;
 
@@ -734,50 +967,44 @@ export default function App() {
         button{font-family:Georgia,serif;transition:all .15s} button:active{opacity:.75;transform:scale(.97)}
         input{font-family:Georgia,serif}
         .layout{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height:100vh}
-        .sidebar{display:none}
-        .top-header{display:flex}
+        .sidebar{display:none} .top-header{display:flex}
         .bottom-nav{display:flex;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;border-top:1px solid #e8e8e8;z-index:200}
-        .main-content{flex:1;overflow-y:auto;padding-bottom:68px}
-        .desktop-header{display:none}
+        .main-content{flex:1;overflow-y:auto;padding-bottom:68px} .desktop-header{display:none}
         @media(min-width:768px){
           .layout{flex-direction:row;max-width:100%;min-height:100vh}
-          .sidebar{display:flex;flex-direction:column;width:220px;min-height:100vh;background:#fff;border-right:1px solid #e8e8e8;position:sticky;top:0;padding:24px 0;flex-shrink:0}
-          .top-header{display:none}
-          .bottom-nav{display:none}
-          .main-content{flex:1;overflow-y:auto;padding-bottom:0;max-width:820px}
+          .sidebar{display:flex;flex-direction:column;width:230px;min-height:100vh;background:#fff;border-right:1px solid #e8e8e8;position:sticky;top:0;padding:24px 0;flex-shrink:0}
+          .top-header{display:none} .bottom-nav{display:none}
+          .main-content{flex:1;overflow-y:auto;padding-bottom:0;max-width:860px}
           .desktop-header{display:flex;background:#fff;border-bottom:1px solid #e8e8e8;padding:14px 24px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
         }
       `}</style>
 
       <div className="layout">
-        {/* Sidebar desktop */}
         <aside className="sidebar">
-          <div style={{padding:"0 20px 24px",borderBottom:"1px solid #f0f0f0"}}>
+          <div style={{padding:"0 20px 20px",borderBottom:"1px solid #f0f0f0"}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <div style={{width:36,height:36,background:"#111",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><CupSVG size={20}/></div>
-              <div>
-                <div style={{fontSize:14,fontWeight:700,color:"#111",letterSpacing:0.3}}>Copa 2026</div>
-                <div style={{fontSize:9,color:"#bbb",letterSpacing:1.5}}>ÁLBUM DE FIGURINHAS</div>
-              </div>
+              <div><div style={{fontSize:14,fontWeight:700,color:"#111"}}>Copa 2026</div><div style={{fontSize:9,color:"#bbb",letterSpacing:1.5}}>ÁLBUM DE FIGURINHAS</div></div>
             </div>
           </div>
-          <div style={{padding:"16px 20px",borderBottom:"1px solid #f0f0f0"}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-              <span style={{fontSize:11,color:"#aaa"}}>Progresso</span>
-              <span style={{fontSize:11,fontWeight:700,color:"#111"}}>{pct}%</span>
-            </div>
+          <div style={{padding:"14px 20px",borderBottom:"1px solid #f0f0f0"}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:11,color:"#aaa"}}>Progresso</span><span style={{fontSize:11,fontWeight:700,color:"#111"}}>{pct}%</span></div>
             <Bar value={owned} total={TOTAL} height={3}/>
-            <div style={{fontSize:10,color:"#bbb",marginTop:5}}>{owned} de {TOTAL}</div>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}>
+              <span style={{fontSize:10,color:"#bbb"}}>{owned} de {TOTAL}</span>
+              {totalRep>0&&<span style={{fontSize:10,color:"#c9a84c",fontWeight:600}}>{totalRep} repetidas</span>}
+            </div>
           </div>
-          {saving && <div style={{padding:"8px 20px",fontSize:10,color:"#bbb"}}>Salvando…</div>}
+          {saving&&<div style={{padding:"8px 20px",fontSize:10,color:"#bbb"}}>Salvando…</div>}
           <nav style={{padding:"12px 0",flex:1}}>
-            {NAV.map(n=>(
+            {NAV.map(n=>{const active=tab===n.id&&!selectedTeam;return(
               <button key={n.id} onClick={()=>{setTab(n.id);setSelectedTeam(null)}}
-                style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"11px 20px",border:"none",background:tab===n.id&&!selectedTeam?"#f7f7f7":"transparent",cursor:"pointer",borderLeft:`3px solid ${tab===n.id&&!selectedTeam?"#111":"transparent"}`,color:tab===n.id&&!selectedTeam?"#111":"#aaa"}}>
-                <Icon name={n.icon} size={16} color={tab===n.id&&!selectedTeam?"#111":"#ccc"} sw={tab===n.id&&!selectedTeam?2:1.5}/>
-                <span style={{fontSize:13,fontWeight:tab===n.id&&!selectedTeam?700:400,letterSpacing:0.3}}>{n.label}</span>
+                style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"11px 20px",border:"none",background:active?"#f7f7f7":"transparent",cursor:"pointer",borderLeft:`3px solid ${active?"#111":"transparent"}`,color:active?"#111":"#aaa"}}>
+                <Icon name={n.icon} size={16} color={active?"#111":"#ccc"} sw={active?2:1.5}/>
+                <span style={{fontSize:13,fontWeight:active?700:400}}>{n.label}</span>
+                {n.id==="share"&&totalRep>0&&<span style={{marginLeft:"auto",fontSize:10,fontWeight:700,color:"#c9a84c"}}>{totalRep}</span>}
               </button>
-            ))}
+            );})}
           </nav>
           <div style={{padding:"16px 20px",borderTop:"1px solid #f0f0f0"}}>
             <div style={{fontSize:12,fontWeight:600,color:"#111"}}>{username}</div>
@@ -789,14 +1016,13 @@ export default function App() {
         </aside>
 
         <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
-          {/* Header mobile */}
           <div className="top-header" style={{background:"#fff",borderBottom:"1px solid #e8e8e8",padding:"12px 16px",position:"sticky",top:0,zIndex:100,alignItems:"center",gap:12}}>
             {selectedTeam
               ? <button onClick={()=>setSelectedTeam(null)} style={{background:"none",border:"none",cursor:"pointer",padding:4,margin:-4}}><Icon name="back" size={18} color="#111" sw={2}/></button>
               : <div style={{width:32,height:32,background:"#111",borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><CupSVG/></div>
             }
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:14,color:"#111",fontWeight:700,letterSpacing:0.3}}>{selectedTeam?selectedTeam.name:"Copa 2026"}</div>
+              <div style={{fontSize:14,color:"#111",fontWeight:700}}>{selectedTeam?selectedTeam.name:"Copa 2026"}</div>
               <div style={{fontSize:9,color:"#bbb",letterSpacing:1.5,marginTop:1}}>{selectedTeam?"FIGURINHAS":"ÁLBUM DE FIGURINHAS"}</div>
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
@@ -806,7 +1032,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Header desktop */}
           <div className="desktop-header">
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               {selectedTeam&&<button onClick={()=>setSelectedTeam(null)} style={{background:"none",border:"none",cursor:"pointer",padding:4,marginRight:4}}><Icon name="back" size={16} color="#111" sw={2}/></button>}
@@ -815,23 +1040,24 @@ export default function App() {
                 <div style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{selectedTeam?"FIGURINHAS":"COPA DO MUNDO 2026"}</div>
               </div>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{display:"flex",gap:16,fontSize:12,color:"#aaa",alignItems:"center"}}>
               {saving&&<span style={{fontSize:10,color:"#bbb"}}>Salvando…</span>}
-              <div style={{fontSize:12,color:"#aaa"}}>{owned} figurinhas · {TOTAL-owned} faltam</div>
+              <span>{owned} figurinhas</span>
+              {totalRep>0&&<span style={{color:"#c9a84c",fontWeight:600}}>{totalRep} repetidas</span>}
             </div>
           </div>
 
           <div className="main-content">{content}</div>
 
-          {/* Bottom nav mobile */}
           <nav className="bottom-nav">
-            {NAV.map(n=>(
+            {NAV.map(n=>{const active=tab===n.id&&!selectedTeam;return(
               <button key={n.id} onClick={()=>{setTab(n.id);setSelectedTeam(null)}}
-                style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",gap:3,borderTop:`2px solid ${tab===n.id&&!selectedTeam?"#111":"transparent"}`,marginTop:-1}}>
-                <Icon name={n.icon} size={17} color={tab===n.id&&!selectedTeam?"#111":"#ccc"} sw={tab===n.id&&!selectedTeam?2:1.5}/>
-                <span style={{fontSize:9,fontWeight:tab===n.id&&!selectedTeam?700:400,color:tab===n.id&&!selectedTeam?"#111":"#ccc",letterSpacing:0.8}}>{n.label}</span>
+                style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",gap:3,borderTop:`2px solid ${active?"#111":"transparent"}`,marginTop:-1,position:"relative"}}>
+                <Icon name={n.icon} size={17} color={active?"#111":"#ccc"} sw={active?2:1.5}/>
+                {n.id==="share"&&totalRep>0&&<div style={{position:"absolute",top:6,right:"calc(50% - 14px)",width:14,height:14,borderRadius:"50%",background:"#c9a84c",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#fff",fontWeight:800}}>{totalRep>9?"9+":totalRep}</div>}
+                <span style={{fontSize:9,fontWeight:active?700:400,color:active?"#111":"#ccc",letterSpacing:0.8}}>{n.label}</span>
               </button>
-            ))}
+            );})}
           </nav>
         </div>
       </div>

@@ -4,7 +4,7 @@ Tracker de figurinhas com autenticação real (Supabase) e deploy na Vercel.
 
 ---
 
-## 🗂️ Estrutura do projeto
+## Estrutura do projeto
 
 ```
 copa2026/
@@ -22,7 +22,7 @@ copa2026/
 
 ---
 
-## 🚀 Como subir no GitHub + Vercel
+## Como subir no GitHub + Vercel
 
 ### 1. Criar repositório no GitHub
 
@@ -35,7 +35,7 @@ git remote add origin https://github.com/SEU_USUARIO/copa2026.git
 git push -u origin main
 ```
 
-> ⚠️ O arquivo `.env` está no `.gitignore` — as credenciais NÃO serão enviadas ao GitHub.
+>  O arquivo `.env` está no `.gitignore` — as credenciais NÃO serão enviadas ao GitHub.
 
 ---
 

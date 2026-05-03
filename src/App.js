@@ -96,6 +96,35 @@ const ALL = allStickers();
 const TOTAL = Object.keys(ALL).length;
 
 // Demo data
+const DEMO = {};
+["BRA 1","BRA 3","BRA 5","BRA 7","ARG 1","ARG 2","ARG 4","FRA 1","FRA 2","GER 1",
+ "TUR 1","TUR 5","TUR 14","TUR 18","SCO 11","URU 3","MEX 5","MEX 9","MEX 14",
+ "FWC 1","FWC 2","POR 1","POR 3","ESP 1","ITA 1"].forEach(id => {
+  DEMO[id] = { owned: true, repeated: ["TUR 14","BRA 5","ARG 4"].includes(id) };
+});
+
+// ─── ICONS ────────────────────────────────────────────────────────────────────
+const Icon = ({ name, size=18, color="#111", sw=1.5 }) => {
+  const d = {
+    back:   <><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></>,
+    album:  <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></>,
+    chart:  <><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-6"/></>,
+    repeat: <><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></>,
+    user:   <><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
+    search: <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></>,
+    check:  <path d="M20 6L9 17l-5-5"/>,
+    copy:   <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></>,
+    logout: <><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
+    down:   <path d="m6 9 6 6 6-6"/>,
+    right:  <path d="m9 18 6-6-6-6"/>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+      {d[name]}
+    </svg>
+  );
+};
 
 // ─── PROGRESS BAR ─────────────────────────────────────────────────────────────
 const Bar = ({ value, total, height=2 }) => {
@@ -454,7 +483,7 @@ const TrocarTab = ({ stickers, onToggleRep }) => {
 };
 
 // ─── ABA PERFIL ───────────────────────────────────────────────────────────────
-const PerfilTab = ({ username, onSignOut }) => (
+const PerfilTab = ({ username, email, onSignOut }) => (
   <div style={{padding:"12px 14px 20px"}}>
     <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,
       padding:24,textAlign:"center",marginBottom:10}}>
@@ -463,7 +492,7 @@ const PerfilTab = ({ username, onSignOut }) => (
         <Icon name="user" size={22} color="#fff" sw={1.5}/>
       </div>
       <div style={{fontSize:16,fontWeight:700,color:"#111",fontFamily:"Georgia,serif"}}>{ username }</div>
-      <div style={{fontSize:11,color:"#aaa",marginTop:3}}>{session?.user?.email}</div>
+      <div style={{fontSize:11,color:"#aaa",marginTop:3}}>{ email }</div>
     </div>
     <button style={{width:"100%",padding:"13px",background:"#fff",
       border:"1px solid #e8e8e8",borderRadius:8,color:"#aaa",
@@ -475,186 +504,6 @@ const PerfilTab = ({ username, onSignOut }) => (
   </div>
 );
 
-
-// ─── APP COM SUPABASE ─────────────────────────────────────────────────────────
-export default function App() {
-  const params = new URLSearchParams(window.location.search);
-  const publicUser = params.get("user");
-
-  const [session, setSession] = useState(undefined);
-  const [stickers, setStickers] = useState({});
-  const [tab, setTab] = useState("album");
-  const [selectedTeam, setSelectedTeam] = useState(null);
-  const [saving, setSaving] = useState(false);
-
-  // Auth
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: l } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => l.subscription.unsubscribe();
-  }, []);
-
-  // Carrega figurinhas do banco
-  useEffect(() => {
-    if (!session) return;
-    supabase.from("stickers").select("sticker_id,owned,repeated").eq("user_id", session.user.id)
-      .then(({ data }) => {
-        const m = {};
-        data?.forEach(r => { m[r.sticker_id] = { owned: r.owned, repeated: r.repeated }; });
-        setStickers(m);
-      });
-  }, [session]);
-
-  const syncPublic = useCallback(async (updated) => {
-    const ids = Object.entries(updated).filter(([,v]) => v.owned && v.repeated).map(([k]) => k);
-    const username = session.user.user_metadata?.username || session.user.email.split("@")[0];
-    await supabase.from("public_repeated").upsert(
-      { user_id: session.user.id, username, repeated_ids: ids, updated_at: new Date().toISOString() },
-      { onConflict: "user_id" }
-    );
-  }, [session]);
-
-  const toggle = useCallback(async (id) => {
-    const cur = stickers[id] || {};
-    const next = { ...stickers };
-    if (cur.owned) { delete next[id]; } else { next[id] = { owned: true, repeated: false }; }
-    setStickers(next);
-    setSaving(true);
-    await supabase.from("stickers").upsert(
-      { user_id: session.user.id, sticker_id: id, owned: !!next[id]?.owned, repeated: false, updated_at: new Date().toISOString() },
-      { onConflict: "user_id,sticker_id" }
-    );
-    await syncPublic(next);
-    setSaving(false);
-  }, [stickers, session, syncPublic]);
-
-  const toggleRep = useCallback(async (id) => {
-    const cur = stickers[id] || {};
-    if (!cur.owned) return;
-    const next = { ...stickers, [id]: { owned: true, repeated: !cur.repeated } };
-    setStickers(next);
-    setSaving(true);
-    await supabase.from("stickers").upsert(
-      { user_id: session.user.id, sticker_id: id, owned: true, repeated: !cur.repeated, updated_at: new Date().toISOString() },
-      { onConflict: "user_id,sticker_id" }
-    );
-    await syncPublic(next);
-    setSaving(false);
-  }, [stickers, session, syncPublic]);
-
-  const username = session?.user?.user_metadata?.username || session?.user?.email?.split("@")[0] || "";
-  const owned = Object.values(stickers).filter(s => s.owned).length;
-  const pct = Math.round((owned / TOTAL) * 100);
-
-  // Página pública
-  if (publicUser) return <PublicRepeatedPage username={publicUser} />;
-
-  // Loading
-  if (session === undefined) return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",
-      background:"#f4f4f4",color:"#aaa",fontSize:13,fontFamily:"Georgia,serif"}}>
-      Carregando...
-    </div>
-  );
-
-  // Login
-  if (!session) return <AuthScreen onLogin={() => {}} />;
-
-  const NAV = [
-    { id:"album",  icon:"album",  label:"Álbum" },
-    { id:"stats",  icon:"chart",  label:"Stats" },
-    { id:"share",  icon:"repeat", label:"Trocar" },
-    { id:"profile",icon:"user",   label:"Perfil" },
-  ];
-
-  return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",
-      background:"#f4f4f4",fontFamily:"Georgia,serif",display:"flex",flexDirection:"column"}}>
-      <style>{`
-        *{box-sizing:border-box} body{margin:0;background:#f4f4f4}
-        ::-webkit-scrollbar{display:none}
-        button{font-family:Georgia,serif;transition:all .15s}
-        button:active{opacity:.75;transform:scale(.97)}
-        input{font-family:Georgia,serif}
-      `}</style>
-
-      {/* HEADER */}
-      <div style={{background:"#fff",borderBottom:"1px solid #e8e8e8",padding:"12px 16px",position:"sticky",top:0,zIndex:100}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          {selectedTeam ? (
-            <button onClick={() => setSelectedTeam(null)}
-              style={{background:"none",border:"none",cursor:"pointer",padding:4,margin:-4}}>
-              <Icon name="back" size={18} color="#111" sw={2}/>
-            </button>
-          ) : (
-            <div style={{width:32,height:32,background:"#111",borderRadius:7,
-              display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <svg viewBox="0 0 80 90" width="18" fill="none">
-                <path d="M22 10 C22 10 20 26 22 34 C24 42 32 46 40 46 C48 46 56 42 58 34 C60 26 58 10 58 10 Z" fill="#fff" opacity="0.9"/>
-                <path d="M22 16 C17 16 13 20 13 25 C13 30 17 34 22 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-                <path d="M58 16 C63 16 67 20 67 25 C67 30 63 34 58 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-                <rect x="36" y="46" width="8" height="14" rx="2" fill="#fff"/>
-                <rect x="28" y="60" width="24" height="4" rx="2" fill="#fff"/>
-                <polygon points="40,2 42,7.5 48,7.5 43.5,11 45.5,16.5 40,13 34.5,16.5 36.5,11 32,7.5 38,7.5" fill="#fff"/>
-              </svg>
-            </div>
-          )}
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:14,color:"#111",fontWeight:700,letterSpacing:0.3}}>
-              {selectedTeam ? selectedTeam.name : "Copa 2026"}
-            </div>
-            <div style={{fontSize:9,color:"#bbb",letterSpacing:1.5,marginTop:1}}>
-              {selectedTeam ? "FIGURINHAS" : "ÁLBUM DE FIGURINHAS"}
-            </div>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-            {saving && <span style={{fontSize:9,color:"#bbb"}}>salvando…</span>}
-            <div style={{textAlign:"right"}}>
-              <div style={{fontSize:12,color:"#111",fontWeight:700}}>{pct}%</div>
-              <div style={{width:70,height:2,background:"#eee",borderRadius:2,marginTop:4}}>
-                <div style={{height:"100%",width:`${pct}%`,background:"#111",borderRadius:2,transition:"width .4s"}}/>
-              </div>
-              <div style={{fontSize:9,color:"#bbb",marginTop:3}}>{owned}/{TOTAL}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* CONTEÚDO */}
-      <div style={{flex:1,overflowY:"auto",paddingBottom:68}}>
-        {selectedTeam ? (
-          <TeamScreen team={selectedTeam} stickers={stickers} onToggle={toggle} onToggleRep={toggleRep} onBack={() => setSelectedTeam(null)}/>
-        ) : (
-          <>
-            {tab==="album"   && <AlbumTab stickers={stickers} onSelectTeam={t => setSelectedTeam(t)}/>}
-            {tab==="stats"   && <StatsTab stickers={stickers}/>}
-            {tab==="share"   && <TrocarTab stickers={stickers} onToggleRep={toggleRep}/>}
-            {tab==="profile" && <PerfilTab username={username} onSignOut={() => supabase.auth.signOut()}/>}
-          </>
-        )}
-      </div>
-
-      {/* BOTTOM NAV */}
-      {!selectedTeam && (
-        <nav style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",
-          width:"100%",maxWidth:430,background:"#fff",borderTop:"1px solid #e8e8e8",display:"flex",zIndex:200}}>
-          {NAV.map(n => (
-            <button key={n.id} onClick={() => setTab(n.id)}
-              style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",
-                justifyContent:"center",padding:"10px 4px 8px",border:"none",
-                background:"transparent",cursor:"pointer",gap:3,
-                borderTop:`2px solid ${tab===n.id?"#111":"transparent"}`,marginTop:-1}}>
-              <Icon name={n.icon} size={17} color={tab===n.id?"#111":"#ccc"} sw={tab===n.id?2:1.5}/>
-              <span style={{fontSize:9,fontWeight:tab===n.id?700:400,color:tab===n.id?"#111":"#ccc",letterSpacing:0.8}}>
-                {n.label}
-              </span>
-            </button>
-          ))}
-        </nav>
-      )}
-    </div>
-  );
-}
 
 // ─── AUTH SCREEN ──────────────────────────────────────────────────────────────
 function AuthScreen({ onLogin }) {
@@ -684,13 +533,13 @@ function AuthScreen({ onLogin }) {
     setLoading(false);
   }
 
+  const inp = { width:"100%", padding:"11px", border:"1px solid #e8e8e8", borderRadius:7, fontSize:14, outline:"none", color:"#111", fontFamily:"Georgia,serif" };
+
   return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",
-      background:"#f4f4f4",padding:"24px 20px"}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f4f4f4",padding:"24px 20px"}}>
       <div style={{width:"100%",maxWidth:380}}>
         <div style={{textAlign:"center",marginBottom:28}}>
-          <div style={{width:44,height:44,background:"#111",borderRadius:10,
-            display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
+          <div style={{width:44,height:44,background:"#111",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
             <svg viewBox="0 0 80 90" width="24" fill="none">
               <path d="M22 10 C22 10 20 26 22 34 C24 42 32 46 40 46 C48 46 56 42 58 34 C60 26 58 10 58 10 Z" fill="#fff" opacity="0.9"/>
               <path d="M22 16 C17 16 13 20 13 25 C13 30 17 34 22 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
@@ -700,46 +549,25 @@ function AuthScreen({ onLogin }) {
               <polygon points="40,2 42,7.5 48,7.5 43.5,11 45.5,16.5 40,13 34.5,16.5 36.5,11 32,7.5 38,7.5" fill="#fff"/>
             </svg>
           </div>
-          <div style={{fontSize:18,fontWeight:700,color:"#111"}}>Copa 2026</div>
+          <div style={{fontSize:18,fontWeight:700,color:"#111",fontFamily:"Georgia,serif"}}>Copa 2026</div>
           <div style={{fontSize:11,color:"#aaa",marginTop:2,letterSpacing:1}}>ÁLBUM DE FIGURINHAS</div>
         </div>
-
-        <div style={{background:"#fff",borderRadius:10,padding:"20px",border:"1px solid #e8e8e8"}}>
+        <div style={{background:"#fff",borderRadius:10,padding:20,border:"1px solid #e8e8e8"}}>
           <div style={{display:"flex",borderBottom:"1px solid #e8e8e8",marginBottom:20}}>
-            {["login","register"].map(m => (
-              <button key={m} onClick={() => { setMode(m); setError(""); setInfo(""); }}
-                style={{flex:1,padding:"10px",border:"none",background:"transparent",
-                  color: mode===m?"#111":"#aaa",fontSize:13,fontWeight:mode===m?700:400,
-                  cursor:"pointer",borderBottom:`2px solid ${mode===m?"#111":"transparent"}`,marginBottom:-1}}>
+            {["login","register"].map(m=>(
+              <button key={m} onClick={()=>{setMode(m);setError("");setInfo("");}}
+                style={{flex:1,padding:"10px",border:"none",background:"transparent",color:mode===m?"#111":"#aaa",fontSize:13,fontWeight:mode===m?700:400,cursor:"pointer",borderBottom:`2px solid ${mode===m?"#111":"transparent"}`,marginBottom:-1,fontFamily:"Georgia,serif"}}>
                 {m==="login"?"Entrar":"Cadastrar"}
               </button>
             ))}
           </div>
-
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {mode==="register" && (
-              <div>
-                <label style={{fontSize:11,color:"#aaa",display:"block",marginBottom:5,letterSpacing:0.5}}>USUÁRIO</label>
-                <input value={username} onChange={e=>setUsername(e.target.value)} placeholder="ex: joaosilva"
-                  style={{width:"100%",padding:"11px",border:"1px solid #e8e8e8",borderRadius:7,fontSize:14,outline:"none",color:"#111"}}/>
-              </div>
-            )}
-            <div>
-              <label style={{fontSize:11,color:"#aaa",display:"block",marginBottom:5,letterSpacing:0.5}}>E-MAIL</label>
-              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com"
-                style={{width:"100%",padding:"11px",border:"1px solid #e8e8e8",borderRadius:7,fontSize:14,outline:"none",color:"#111"}}/>
-            </div>
-            <div>
-              <label style={{fontSize:11,color:"#aaa",display:"block",marginBottom:5,letterSpacing:0.5}}>SENHA</label>
-              <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="mínimo 6 caracteres"
-                onKeyDown={e=>e.key==="Enter"&&handle()}
-                style={{width:"100%",padding:"11px",border:"1px solid #e8e8e8",borderRadius:7,fontSize:14,outline:"none",color:"#111"}}/>
-            </div>
-            {error && <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:7,padding:"9px 12px",fontSize:12,color:"#dc2626"}}>{error}</div>}
-            {info  && <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:7,padding:"9px 12px",fontSize:12,color:"#2563eb"}}>{info}</div>}
-            <button onClick={handle} disabled={loading}
-              style={{padding:"13px",background:"#111",border:"none",borderRadius:7,
-                color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:0.5}}>
+            {mode==="register"&&<div><label style={{fontSize:11,color:"#aaa",display:"block",marginBottom:5,letterSpacing:0.5}}>USUÁRIO</label><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="ex: joaosilva" style={inp}/></div>}
+            <div><label style={{fontSize:11,color:"#aaa",display:"block",marginBottom:5,letterSpacing:0.5}}>E-MAIL</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com" style={inp}/></div>
+            <div><label style={{fontSize:11,color:"#aaa",display:"block",marginBottom:5,letterSpacing:0.5}}>SENHA</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="mínimo 6 caracteres" onKeyDown={e=>e.key==="Enter"&&handle()} style={inp}/></div>
+            {error&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:7,padding:"9px 12px",fontSize:12,color:"#dc2626"}}>{error}</div>}
+            {info&&<div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:7,padding:"9px 12px",fontSize:12,color:"#2563eb"}}>{info}</div>}
+            <button onClick={handle} disabled={loading} style={{padding:"13px",background:"#111",border:"none",borderRadius:7,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:0.5,fontFamily:"Georgia,serif"}}>
               {loading?"Carregando...":mode==="login"?"Entrar":"Criar conta"}
             </button>
           </div>
@@ -758,17 +586,13 @@ function PublicRepeatedPage({ username }) {
   useEffect(() => {
     supabase.from("public_repeated").select("repeated_ids,updated_at").eq("username", username).single()
       .then(({ data }) => {
-        if (data) { setRows(data.repeated_ids || []); setUpdatedAt(new Date(data.updated_at).toLocaleString("pt-BR")); }
+        if (data) { setRows(data.repeated_ids||[]); setUpdatedAt(new Date(data.updated_at).toLocaleString("pt-BR")); }
         setLoading(false);
       });
   }, [username]);
 
-  const rep = useMemo(() => rows.map(id => ({ id, ...ALL[id] })).filter(r => r.group), [rows]);
-  const byGroup = useMemo(() => {
-    const m = {};
-    rep.forEach(s => { if (!m[s.group]) m[s.group] = []; m[s.group].push(s); });
-    return m;
-  }, [rep]);
+  const rep = useMemo(() => rows.map(id=>({id,...ALL[id]})).filter(r=>r.group), [rows]);
+  const byGroup = useMemo(() => { const m={}; rep.forEach(s=>{if(!m[s.group])m[s.group]=[];m[s.group].push(s)}); return m; }, [rep]);
 
   return (
     <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#f4f4f4",fontFamily:"Georgia,serif"}}>
@@ -776,35 +600,158 @@ function PublicRepeatedPage({ username }) {
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div>
             <div style={{fontSize:14,fontWeight:700,color:"#111"}}>Repetidas de {username}</div>
-            {updatedAt && <div style={{fontSize:10,color:"#bbb",marginTop:2}}>Atualizado em {updatedAt}</div>}
+            {updatedAt&&<div style={{fontSize:10,color:"#bbb",marginTop:2}}>Atualizado em {updatedAt}</div>}
           </div>
           <a href="/" style={{fontSize:11,color:"#aaa",textDecoration:"none",fontFamily:"Georgia,serif"}}>← Meu álbum</a>
         </div>
       </div>
       <div style={{padding:"12px 14px 24px"}}>
-        {loading ? (
-          <div style={{textAlign:"center",padding:40,color:"#bbb",fontSize:13}}>Carregando...</div>
-        ) : rep.length === 0 ? (
-          <div style={{textAlign:"center",padding:40,color:"#bbb",fontSize:13}}>Nenhuma repetida ainda</div>
-        ) : (
-          Object.entries(byGroup).map(([g, items]) => (
-            <div key={g} style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:14,marginBottom:8}}>
-              <div style={{fontSize:10,fontWeight:700,color:"#aaa",letterSpacing:1,marginBottom:10}}>
-                {g==="FWC"?"ESPECIAIS":`GRUPO ${g}`}
-              </div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                {items.map(s => (
-                  <div key={s.id} style={{display:"flex",alignItems:"center",gap:5,
-                    padding:"6px 10px",borderRadius:6,border:"1px solid #e8e8e8",background:"#f7f7f7"}}>
-                    <span style={{fontSize:14}}>{s.flag}</span>
-                    <span style={{fontSize:10,fontWeight:700,color:"#111",letterSpacing:0.5}}>{s.id}</span>
-                  </div>
-                ))}
-              </div>
+        {loading ? <div style={{textAlign:"center",padding:40,color:"#bbb",fontSize:13}}>Carregando...</div>
+        : rep.length===0 ? <div style={{textAlign:"center",padding:40,color:"#bbb",fontSize:13}}>Nenhuma repetida ainda</div>
+        : Object.entries(byGroup).map(([g,items])=>(
+          <div key={g} style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:14,marginBottom:8}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#aaa",letterSpacing:1,marginBottom:10}}>{g==="FWC"?"ESPECIAIS":`GRUPO ${g}`}</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {items.map(s=>(
+                <div key={s.id} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:6,border:"1px solid #e8e8e8",background:"#f7f7f7"}}>
+                  <span style={{fontSize:14}}>{s.flag}</span>
+                  <span style={{fontSize:10,fontWeight:700,color:"#111",letterSpacing:0.5}}>{s.id}</span>
+                </div>
+              ))}
             </div>
-          ))
-        )}
+          </div>
+        ))}
       </div>
+    </div>
+  );
+}
+
+// ─── APP PRINCIPAL ────────────────────────────────────────────────────────────
+export default function App() {
+  const params = new URLSearchParams(window.location.search);
+  const publicUser = params.get("user");
+
+  const [session, setSession] = useState(undefined);
+  const [stickers, setStickers] = useState({});
+  const [tab, setTab] = useState("album");
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: l } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => l.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    supabase.from("stickers").select("sticker_id,owned,repeated").eq("user_id", session.user.id)
+      .then(({ data }) => {
+        const m = {};
+        data?.forEach(r => { m[r.sticker_id] = { owned: r.owned, repeated: r.repeated }; });
+        setStickers(m);
+      });
+  }, [session]);
+
+  const syncPublic = useCallback(async (updated) => {
+    const ids = Object.entries(updated).filter(([,v])=>v.owned&&v.repeated).map(([k])=>k);
+    const un = session.user.user_metadata?.username || session.user.email.split("@")[0];
+    await supabase.from("public_repeated").upsert({ user_id:session.user.id, username:un, repeated_ids:ids, updated_at:new Date().toISOString() }, { onConflict:"user_id" });
+  }, [session]);
+
+  const toggle = useCallback(async (id) => {
+    const cur = stickers[id] || {};
+    const next = { ...stickers };
+    if (cur.owned) { delete next[id]; } else { next[id] = { owned:true, repeated:false }; }
+    setStickers(next); setSaving(true);
+    await supabase.from("stickers").upsert({ user_id:session.user.id, sticker_id:id, owned:!!next[id]?.owned, repeated:false, updated_at:new Date().toISOString() }, { onConflict:"user_id,sticker_id" });
+    await syncPublic(next); setSaving(false);
+  }, [stickers, session, syncPublic]);
+
+  const toggleRep = useCallback(async (id) => {
+    const cur = stickers[id] || {};
+    if (!cur.owned) return;
+    const next = { ...stickers, [id]: { owned:true, repeated:!cur.repeated } };
+    setStickers(next); setSaving(true);
+    await supabase.from("stickers").upsert({ user_id:session.user.id, sticker_id:id, owned:true, repeated:!cur.repeated, updated_at:new Date().toISOString() }, { onConflict:"user_id,sticker_id" });
+    await syncPublic(next); setSaving(false);
+  }, [stickers, session, syncPublic]);
+
+  const username = session?.user?.user_metadata?.username || session?.user?.email?.split("@")[0] || "";
+  const email = session?.user?.email || "";
+  const owned = Object.values(stickers).filter(s=>s.owned).length;
+  const pct = Math.round((owned/TOTAL)*100);
+
+  if (publicUser) return <PublicRepeatedPage username={publicUser}/>;
+
+  if (session === undefined) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f4f4f4",color:"#aaa",fontSize:13,fontFamily:"Georgia,serif"}}>
+      Carregando...
+    </div>
+  );
+
+  if (!session) return <AuthScreen onLogin={()=>{}} />;
+
+  const CupSVG = () => (
+    <svg viewBox="0 0 80 90" width="18" fill="none">
+      <path d="M22 10 C22 10 20 26 22 34 C24 42 32 46 40 46 C48 46 56 42 58 34 C60 26 58 10 58 10 Z" fill="#fff" opacity="0.9"/>
+      <path d="M22 16 C17 16 13 20 13 25 C13 30 17 34 22 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+      <path d="M58 16 C63 16 67 20 67 25 C67 30 63 34 58 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+      <rect x="36" y="46" width="8" height="14" rx="2" fill="#fff"/>
+      <rect x="28" y="60" width="24" height="4" rx="2" fill="#fff"/>
+      <polygon points="40,2 42,7.5 48,7.5 43.5,11 45.5,16.5 40,13 34.5,16.5 36.5,11 32,7.5 38,7.5" fill="#fff"/>
+    </svg>
+  );
+
+  const NAV = [{id:"album",icon:"album",label:"Álbum"},{id:"stats",icon:"chart",label:"Stats"},{id:"share",icon:"repeat",label:"Trocar"},{id:"profile",icon:"user",label:"Perfil"}];
+
+  return (
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#f4f4f4",fontFamily:"Georgia,serif",display:"flex",flexDirection:"column"}}>
+      <style>{`*{box-sizing:border-box}body{margin:0;background:#f4f4f4}::-webkit-scrollbar{display:none}button{font-family:Georgia,serif;transition:all .15s}button:active{opacity:.75;transform:scale(.97)}input{font-family:Georgia,serif}`}</style>
+
+      <div style={{background:"#fff",borderBottom:"1px solid #e8e8e8",padding:"12px 16px",position:"sticky",top:0,zIndex:100}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          {selectedTeam
+            ? <button onClick={()=>setSelectedTeam(null)} style={{background:"none",border:"none",cursor:"pointer",padding:4,margin:-4}}><Icon name="back" size={18} color="#111" sw={2}/></button>
+            : <div style={{width:32,height:32,background:"#111",borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><CupSVG/></div>
+          }
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:14,color:"#111",fontWeight:700,letterSpacing:0.3}}>{selectedTeam ? selectedTeam.name : "Copa 2026"}</div>
+            <div style={{fontSize:9,color:"#bbb",letterSpacing:1.5,marginTop:1}}>{selectedTeam ? "FIGURINHAS" : "ÁLBUM DE FIGURINHAS"}</div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+            {saving && <span style={{fontSize:9,color:"#bbb"}}>salvando…</span>}
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:12,color:"#111",fontWeight:700}}>{pct}%</div>
+              <div style={{width:70,height:2,background:"#eee",borderRadius:2,marginTop:4}}><div style={{height:"100%",width:`${pct}%`,background:"#111",borderRadius:2,transition:"width .4s"}}/></div>
+              <div style={{fontSize:9,color:"#bbb",marginTop:3}}>{owned}/{TOTAL}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{flex:1,overflowY:"auto",paddingBottom:68}}>
+        {selectedTeam
+          ? <TeamScreen team={selectedTeam} stickers={stickers} onToggle={toggle} onToggleRep={toggleRep} onBack={()=>setSelectedTeam(null)}/>
+          : <>
+              {tab==="album"   && <AlbumTab stickers={stickers} onSelectTeam={t=>setSelectedTeam(t)}/>}
+              {tab==="stats"   && <StatsTab stickers={stickers}/>}
+              {tab==="share"   && <TrocarTab stickers={stickers} onToggleRep={toggleRep}/>}
+              {tab==="profile" && <PerfilTab username={username} email={email} onSignOut={()=>supabase.auth.signOut()}/>}
+            </>
+        }
+      </div>
+
+      {!selectedTeam && (
+        <nav style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:"#fff",borderTop:"1px solid #e8e8e8",display:"flex",zIndex:200}}>
+          {NAV.map(n=>(
+            <button key={n.id} onClick={()=>setTab(n.id)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",gap:3,borderTop:`2px solid ${tab===n.id?"#111":"transparent"}`,marginTop:-1}}>
+              <Icon name={n.icon} size={17} color={tab===n.id?"#111":"#ccc"} sw={tab===n.id?2:1.5}/>
+              <span style={{fontSize:9,fontWeight:tab===n.id?700:400,color:tab===n.id?"#111":"#ccc",letterSpacing:0.8}}>{n.label}</span>
+            </button>
+          ))}
+        </nav>
+      )}
     </div>
   );
 }

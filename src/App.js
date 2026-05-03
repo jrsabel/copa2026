@@ -623,18 +623,17 @@ const StatsTab = ({ stickers }) => {
 // ─── ABA TROCAR ───────────────────────────────────────────────────────────────
 const TrocarTab = ({ stickers, onToggleRep, onShare }) => {
   const [search, setSearch] = useState("");
+  const [openGroups, setOpenGroups] = useState({});
+  const toggleGroup = g => setOpenGroups(prev=>({...prev,[g]:!prev[g]}));
 
   async function handleShare() {
     const url = `${window.location.origin}/?user=jrsabel`;
     const text = "Minhas figurinhas repetidas da Copa 2026 — veja quais tenho para trocar!";
     if (navigator.share) {
       try { await navigator.share({title:"Copa 2026 — Figurinhas Repetidas",text,url}); } catch(e){}
-    } else {
-      navigator.clipboard.writeText(url);
-    }
+    } else { navigator.clipboard.writeText(url); }
   }
 
-  // Todas as repetidas com qty > 0
   const rep = useMemo(()=>
     Object.entries(stickers)
       .filter(([,v])=>v.owned && (v.qty||0)>0)
@@ -650,87 +649,132 @@ const TrocarTab = ({ stickers, onToggleRep, onShare }) => {
     return rep.filter(r=>r.id.includes(q)||(r.team||"").toUpperCase().includes(q));
   },[rep,search]);
 
+  // Agrupa por grupo, depois por time
   const byGroup = useMemo(()=>{
     const m={};
     filtered.forEach(s=>{if(!m[s.group])m[s.group]=[];m[s.group].push(s)});
     return m;
   },[filtered]);
 
+  // Para cada grupo, agrupa por time
+  const byGroupAndTeam = useMemo(()=>{
+    const result={};
+    Object.entries(byGroup).forEach(([g,items])=>{
+      const teams={};
+      items.forEach(s=>{
+        const key = s.team||g;
+        if(!teams[key]) teams[key]={team:s.team,code:s.code,flag:s.flag,items:[]};
+        teams[key].items.push(s);
+      });
+      result[g]=teams;
+    });
+    return result;
+  },[byGroup]);
+
   return (
-    <div style={{padding:"12px 14px 20px"}}>
+    <div style={{padding:"0 0 20px"}}>
       {/* Compartilhar */}
-      <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:16,marginBottom:12}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#111",marginBottom:3}}>Página pública de trocas</div>
-        <div style={{fontSize:11,color:"#aaa",marginBottom:12}}>Compartilhe para trocar figurinhas</div>
-        <div style={{background:"#f7f7f7",borderRadius:6,padding:"9px 12px",fontSize:10,color:"#888",marginBottom:12,fontFamily:"monospace",wordBreak:"break-all"}}>
+      <div style={{margin:"12px 14px 0",background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:14}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#111",marginBottom:2}}>Página pública de trocas</div>
+        <div style={{fontSize:11,color:"#aaa",marginBottom:10}}>Compartilhe para trocar figurinhas</div>
+        <div style={{background:"#f7f7f7",borderRadius:6,padding:"8px 10px",fontSize:10,color:"#888",marginBottom:10,fontFamily:"monospace",wordBreak:"break-all"}}>
           albumcopa26.vercel.app/?user=jrsabel
         </div>
         <button onClick={onShare||handleShare}
-          style={{width:"100%",padding:"11px",background:"#111",border:"1px solid #111",borderRadius:6,color:"#fff",fontSize:12,fontWeight:600,fontFamily:"Georgia,serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,letterSpacing:0.3}}>
+          style={{width:"100%",padding:"10px",background:"#111",border:"none",borderRadius:6,color:"#fff",fontSize:12,fontWeight:600,fontFamily:"Georgia,serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
           <Icon name="share" size={13} color="#fff" sw={2}/>
           Compartilhar minhas repetidas
         </button>
       </div>
 
-      {/* Título + busca */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-        <div style={{fontSize:10,fontWeight:700,color:"#aaa",letterSpacing:1.5}}>
-          REPETIDAS
+      {/* Cabeçalho + busca */}
+      <div style={{padding:"14px 14px 0"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+          <div style={{fontSize:10,fontWeight:700,color:"#aaa",letterSpacing:1.5}}>REPETIDAS</div>
+          <div style={{fontSize:13,fontWeight:800,color:"#c9a84c",fontFamily:"Georgia,serif"}}>{totalRep} total</div>
         </div>
-        <div style={{fontSize:13,fontWeight:800,color:"#c9a84c",fontFamily:"Georgia,serif"}}>
-          {totalRep} total
+        <div style={{position:"relative",marginBottom:14}}>
+          <div style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",opacity:0.3}}>
+            <Icon name="search" size={13} color="#111"/>
+          </div>
+          <input style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:"9px 12px 9px 30px",color:"#111",fontFamily:"Georgia,serif",fontSize:13,outline:"none",width:"100%"}}
+            placeholder="Buscar figurinha repetida..." value={search} onChange={e=>setSearch(e.target.value)}/>
         </div>
-      </div>
-
-      {/* Busca repetidas */}
-      <div style={{position:"relative",marginBottom:12}}>
-        <div style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",opacity:0.3}}>
-          <Icon name="search" size={13} color="#111"/>
-        </div>
-        <input style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:"9px 12px 9px 30px",color:"#111",fontFamily:"Georgia,serif",fontSize:12,outline:"none",width:"100%"}}
-          placeholder="Buscar figurinha repetida..." value={search} onChange={e=>setSearch(e.target.value)}/>
       </div>
 
       {filtered.length===0
-        ? <div style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:28,textAlign:"center",color:"#bbb",fontSize:12,fontFamily:"Georgia,serif"}}>
+        ? <div style={{margin:"0 14px",background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:28,textAlign:"center",color:"#bbb",fontSize:12,fontFamily:"Georgia,serif"}}>
             Nenhuma repetida ainda
           </div>
-        : Object.entries(byGroup).map(([g,items])=>{
-            const isCC = g==="ESPECIAL" && items.some(i=>SPECIAL_GROUPS.CC.ids.includes(i.id));
-            const isFWC = g==="ESPECIAL";
+        : Object.entries(byGroupAndTeam).map(([g, teams])=>{
+            const groupItems = filtered.filter(s=>s.group===g);
+            const groupQty = groupItems.reduce((acc,s)=>acc+s.qty,0);
+            const isOpen = openGroups[g]!==false; // aberto por padrão
+            const isSpecial = g==="ESPECIAL";
+
             return (
-              <div key={g} style={{background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,padding:14,marginBottom:8}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#aaa",letterSpacing:1,marginBottom:10}}>
-                  {g==="ESPECIAL"?"ESPECIAIS":`GRUPO ${g}`}
-                </div>
-                <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                  {items.map(s=>{
-                    const accentColor = specialColor(s.id) || "#111";
-                    return (
-                      <div key={s.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:"1px solid #f0f0f0",background:"#fafafa"}}>
-                        {s.code && <FlagBadge code={s.code} emoji={s.flag} size={28}/>}
-                        <div style={{flex:1}}>
-                          <div style={{fontSize:11,fontWeight:700,color:"#111",fontFamily:"Georgia,serif",letterSpacing:0.5}}>{s.id}</div>
-                          {s.team && <div style={{fontSize:9,color:"#aaa",marginTop:1}}>{s.team}</div>}
-                        </div>
-                        {/* Controles − qty + */}
-                        <div style={{display:"flex",alignItems:"center",gap:0,borderRadius:6,overflow:"hidden",border:"1px solid #e0e0e0"}}>
-                          <button onClick={()=>onToggleRep(s.id,-1)}
-                            style={{padding:"6px 9px",background:"#fff",border:"none",cursor:"pointer",display:"flex",alignItems:"center"}}>
-                            <Icon name="minus" size={11} color="#666" sw={2.5}/>
-                          </button>
-                          <div style={{padding:"6px 10px",background:accentColor,color:"#fff",fontSize:12,fontWeight:800,fontFamily:"Georgia,serif",minWidth:32,textAlign:"center"}}>
-                            {s.qty}
+              <div key={g} style={{margin:"0 14px 10px"}}>
+                {/* Header do grupo */}
+                <button onClick={()=>toggleGroup(g)}
+                  style={{width:"100%",background:"#fff",border:"1px solid #e8e8e8",
+                    borderRadius:isOpen?"8px 8px 0 0":"8px",
+                    padding:"12px 14px",display:"flex",alignItems:"center",
+                    justifyContent:"space-between",cursor:"pointer",
+                    borderBottom:isOpen?"1px solid #f0f0f0":"1px solid #e8e8e8"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{fontSize:11,fontWeight:800,color:"#111",letterSpacing:1,width:28,height:28,background:"#f4f4f4",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      {isSpecial?"★":g}
+                    </div>
+                    <div style={{textAlign:"left"}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"#111"}}>{isSpecial?"Especiais":`Grupo ${g}`}</div>
+                      <div style={{fontSize:10,color:"#c9a84c",fontWeight:600,marginTop:1}}>{groupQty} repetida{groupQty!==1?"s":""}</div>
+                    </div>
+                  </div>
+                  <Icon name={isOpen?"down":"right"} size={14} color="#ccc" sw={2}/>
+                </button>
+
+                {/* Times dentro do grupo */}
+                {isOpen && (
+                  <div style={{background:"#fff",border:"1px solid #e8e8e8",borderTop:"none",borderRadius:"0 0 8px 8px",overflow:"hidden"}}>
+                    {Object.entries(teams).map(([teamKey,teamData],idx)=>(
+                      <div key={teamKey} style={{borderTop:idx>0?"1px solid #f5f5f5":"none"}}>
+                        {/* Header do time com bandeira */}
+                        <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px 6px",background:"#fafafa"}}>
+                          <FlagBadge code={teamData.code} emoji={teamData.flag} size={28}/>
+                          <div style={{fontSize:11,fontWeight:600,color:"#555"}}>
+                            {teamData.team} <span style={{color:"#ccc",fontWeight:400,fontSize:10}}>({teamData.code})</span>
                           </div>
-                          <button onClick={()=>onToggleRep(s.id,1)}
-                            style={{padding:"6px 9px",background:"#fff",border:"none",cursor:"pointer",display:"flex",alignItems:"center"}}>
-                            <Icon name="plus" size={11} color="#666" sw={2.5}/>
-                          </button>
+                        </div>
+                {/* Figurinhas do time em grid 3 colunas */}
+                        <div style={{padding:"8px 14px 12px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                          {teamData.items.map(s=>{
+                            const qty = s.qty||0;
+                            return (
+                              <div key={s.id} style={{display:"flex",flexDirection:"column"}}>
+                                <div style={{padding:"14px 6px",borderRadius:"8px 8px 0 0",border:"1px solid #111",borderBottom:"none",background:"#111",color:"#fff",fontSize:11,fontWeight:700,letterSpacing:1,textAlign:"center",fontFamily:"Georgia,serif"}}>
+                                  {s.id}
+                                </div>
+                                <div style={{display:"flex",borderRadius:"0 0 8px 8px",overflow:"hidden",border:"1px solid #e0e0e0",borderTop:"none",background:"#fafafa"}}>
+                                  <button onClick={()=>onToggleRep(s.id,-1)}
+                                    style={{flex:1,padding:"6px",background:"#fafafa",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                    <Icon name="minus" size={10} color="#bbb" sw={2.5}/>
+                                  </button>
+                                  <div style={{flex:1,background:qty>0?"#f0f0f0":"transparent",color:qty>0?"#333":"#ccc",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Georgia,serif",borderLeft:"1px solid #e8e8e8",borderRight:"1px solid #e8e8e8"}}>
+                                    {qty>0?`+${qty}`:"rep"}
+                                  </div>
+                                  <button onClick={()=>onToggleRep(s.id,1)}
+                                    style={{flex:1,padding:"6px",background:"#fafafa",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                    <Icon name="plus" size={10} color="#bbb" sw={2.5}/>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })
@@ -739,6 +783,7 @@ const TrocarTab = ({ stickers, onToggleRep, onShare }) => {
   );
 };
 
+
 // ─── ABA PERFIL ───────────────────────────────────────────────────────────────
 const PerfilTab = ({ username, email, onSignOut }) => (
   <div style={{padding:"12px 14px 20px"}}>
@@ -746,7 +791,7 @@ const PerfilTab = ({ username, email, onSignOut }) => (
       <div style={{width:56,height:56,background:"#111",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
         <Icon name="user" size={22} color="#fff" sw={1.5}/>
       </div>
-      <div style={{fontSize:16,fontWeight:700,color:"#111",fontFamily:"Georgia,serif"}}>{ username || "jrsabel" }</div>
+      <div style={{fontSize:16,fontWeight:700,color:"#111",fontFamily:"Georgia,serif"}}>{ username || "" }</div>
       <div style={{fontSize:11,color:"#aaa",marginTop:3}}>{ email || "" }</div>
     </div>
     <button onClick={onSignOut} style={{width:"100%",padding:"13px",background:"#fff",border:"1px solid #e8e8e8",borderRadius:8,color:"#aaa",fontSize:11,fontWeight:600,fontFamily:"Georgia,serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,letterSpacing:0.5}}>
@@ -885,10 +930,10 @@ export default function App() {
 
   useEffect(() => {
     if (!session) return;
-    supabase.from("stickers").select("sticker_id,owned,repeated,qty").eq("user_id", session.user.id)
+    supabase.from("stickers").select("sticker_id,owned,qty").eq("user_id", session.user.id)
       .then(({ data }) => {
         const m = {};
-        data?.forEach(r => { m[r.sticker_id] = { owned: r.owned, repeated: r.repeated, qty: r.qty||0 }; });
+        data?.forEach(r => { m[r.sticker_id] = { owned: r.owned, qty: r.qty||0 }; });
         setStickers(m);
       });
   }, [session]);

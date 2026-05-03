@@ -1,0 +1,9 @@
+# dependencies
+node_modules/
+
+# env com credenciais — NUNCA suba isso no GitHub
+.env
+
+# build
+build/
+.DS_Store

@@ -551,8 +551,8 @@ const AlbumTab = ({ stickers, onSelectTeam }) => {
   );
 };
 
-// ─── ABA STATS ────────────────────────────────────────────────────────────────
-const StatsTab = ({ stickers }) => {
+// ─── ABA RESUMO ────────────────────────────────────────────────────────────────
+const ResumoTab = ({ stickers }) => {
   const owned = Object.values(stickers).filter(s=>s.owned).length;
   const totalRep = Object.values(stickers).reduce((acc,s)=>acc+(s.qty||0),0);
   const pct = Math.round((owned/TOTAL)*100);
@@ -597,8 +597,8 @@ const StatsTab = ({ stickers }) => {
   );
 };
 
-// ─── ABA TROCAR ───────────────────────────────────────────────────────────────
-const TrocarTab = ({ stickers, onToggleRep, onShowPublic }) => {
+// ─── ABA REPETIDAS ───────────────────────────────────────────────────────────────
+const RepetidasTab = ({ stickers, onToggleRep, onShowPublic }) => {
   const [search, setSearch] = useState("");
   const [openGroups, setOpenGroups] = useState({});
   const toggleGroup = g => setOpenGroups(prev=>({...prev,[g]:!prev[g]}));
@@ -1325,8 +1325,8 @@ export default function App() {
 
   const NAV = [
     {id:"album",   icon:"album",   label:"Álbum"},
-    {id:"stats",   icon:"chart",   label:"Stats"},
-    {id:"share",   icon:"repeat",  label:"Trocar"},
+    {id:"stats",   icon:"chart",   label:"Resumo"},
+    {id:"share",   icon:"repeat",  label:"Repetidas"},
     {id:"ranking", icon:"ranking", label:"Ranking"},
     {id:"profile", icon:"user",    label:"Perfil"},
   ];
@@ -1337,8 +1337,8 @@ export default function App() {
       : <TeamScreen team={selectedTeam} stickers={stickers} onToggle={toggle} onToggleRep={toggleRep} onBack={()=>setSelectedTeam(null)}/>
     : <>
         {tab==="album"   && <AlbumTab stickers={stickers} onSelectTeam={t=>setSelectedTeam(t)}/>}
-        {tab==="stats"   && <StatsTab stickers={stickers}/>}
-        {tab==="share"   && <TrocarTab stickers={stickers} onToggleRep={toggleRep} onShare={handleShare}/>}
+        {tab==="stats"   && <ResumoTab stickers={stickers}/>}
+        {tab==="share"   && <RepetidasTab stickers={stickers} onToggleRep={toggleRep} onShare={handleShare}/>}
         {tab==="ranking" && <RankingTab myStickers={stickers} currentUsername={username}/>}
         {tab==="profile" && <PerfilTabReal username={username} email={email} avatarUrl={avatarUrl} onSignOut={()=>supabase.auth.signOut()} onAvatarChange={setAvatarUrl}/>}
       </>;

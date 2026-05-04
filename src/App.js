@@ -169,7 +169,7 @@ const DEMO = {};
 // ─── ICONS ────────────────────────────────────────────────────────────────────
 const Icon = ({ name, size=18, color="#111", sw=1.5 }) => {
   const d = {
-    back:   <><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></>,
+    ranking:<><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M2 20h4M18 20h4"/><path d="M4 20v-1a2 2 0 012-2M20 20v-1a2 2 0 00-2-2"/></>,
     album:  <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></>,
     chart:  <><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-6"/></>,
     repeat: <><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></>,
@@ -551,8 +551,8 @@ const AlbumTab = ({ stickers, onSelectTeam }) => {
   );
 };
 
-// ─── ABA RESUMO ────────────────────────────────────────────────────────────────
-const ResumoTab = ({ stickers }) => {
+// ─── ABA STATS ────────────────────────────────────────────────────────────────
+const StatsTab = ({ stickers }) => {
   const owned = Object.values(stickers).filter(s=>s.owned).length;
   const totalRep = Object.values(stickers).reduce((acc,s)=>acc+(s.qty||0),0);
   const pct = Math.round((owned/TOTAL)*100);
@@ -597,8 +597,8 @@ const ResumoTab = ({ stickers }) => {
   );
 };
 
-// ─── ABA REPETIDAS ───────────────────────────────────────────────────────────────
-const RepetidasTab = ({ stickers, onToggleRep, onShowPublic }) => {
+// ─── ABA TROCAR ───────────────────────────────────────────────────────────────
+const TrocarTab = ({ stickers, onToggleRep, onShowPublic }) => {
   const [search, setSearch] = useState("");
   const [openGroups, setOpenGroups] = useState({});
   const toggleGroup = g => setOpenGroups(prev=>({...prev,[g]:!prev[g]}));
@@ -762,14 +762,14 @@ const RepetidasTab = ({ stickers, onToggleRep, onShowPublic }) => {
 
 
 // ─── ABA PERFIL ───────────────────────────────────────────────────────────────
-const PerfilTab = ({ username, email, onSignOut }) => (
+const PerfilTab = ({ onSignOut }) => (
   <div style={{padding:"12px 14px 20px"}}>
     <div style={{background:"#fff",border:"1px solid #e5e5ea",borderRadius:10,padding:24,textAlign:"center",marginBottom:10}}>
       <div style={{width:56,height:56,background:"#111",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
         <Icon name="user" size={22} color="#fff" sw={1.5}/>
       </div>
-      <div style={{fontSize:16,fontWeight:700,color:"#111",fontFamily:"-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif"}}>{ username || "" }</div>
-      <div style={{fontSize:13,color:"#8e8e93",marginTop:3}}>{ email || "" }</div>
+      <div style={{fontSize:16,fontWeight:700,color:"#111",fontFamily:"-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif"}}>jrsabel</div>
+      <div style={{fontSize:13,color:"#8e8e93",marginTop:3}}>juniorsabel@gmail.com</div>
     </div>
     <button onClick={onSignOut} style={{width:"100%",padding:"13px",background:"#fff",border:"1px solid #e5e5ea",borderRadius:10,color:"#8e8e93",fontSize:13,fontWeight:600,fontFamily:"-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,letterSpacing:0.5}}>
       <Icon name="logout" size={13} color="#aaa" sw={2}/> Sair da conta
@@ -778,25 +778,20 @@ const PerfilTab = ({ username, email, onSignOut }) => (
 );
 
 // ─── PÁGINA PÚBLICA ───────────────────────────────────────────────────────────
-function PublicRepeatedPage({ username }) {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [updatedAt, setUpdatedAt] = useState(null);
+function PublicRepeatedPage({ username, stickers: demoStickers }) {
   const [search, setSearch] = useState("");
   const [openGroups, setOpenGroups] = useState({});
   const toggleGroup = g => setOpenGroups(prev=>({...prev,[g]:!prev[g]}));
-  const APPLE_FONT = "-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif";
 
-  useEffect(() => {
-    supabase.from("public_repeated").select("repeated_ids,updated_at").eq("username", username).single()
-      .then(({ data }) => {
-        if (data) { setRows(data.repeated_ids||[]); setUpdatedAt(new Date(data.updated_at).toLocaleString("pt-BR")); }
-        setLoading(false);
-      });
-  }, [username]);
+  // Simula dados públicos a partir das figurinhas do demo
+  const rep = useMemo(()=>
+    Object.entries(demoStickers||{})
+      .filter(([,v])=>v.owned && (v.qty||0)>0)
+      .map(([id,v])=>({id, qty:v.qty, ...ALL[id]}))
+      .filter(r=>r.group)
+  ,[demoStickers]);
 
-  const rep = useMemo(() => rows.map(id=>({id,...ALL[id]})).filter(r=>r.group), [rows]);
-  const totalRep = rep.length;
+  const totalRep = rep.reduce((acc,r)=>acc+r.qty,0);
 
   const filtered = useMemo(()=>{
     if (!search.trim()) return rep;
@@ -821,15 +816,423 @@ function PublicRepeatedPage({ username }) {
   },[filtered]);
 
   return (
-    <div style={{minHeight:"100vh",background:"#f2f2f7",fontFamily:APPLE_FONT}}>
-      <style>{`*{box-sizing:border-box}body{margin:0;background:#f2f2f7}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:2px}input{font-family:${APPLE_FONT}}`}</style>
-      <div style={{background:"#fff",borderBottom:"1px solid #e5e5ea",padding:"14px 16px",position:"sticky",top:0,zIndex:10}}>
+    <div style={{minHeight:"100vh",background:"#f2f2f7",fontFamily:"-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif"}}>
+      {/* Header */}
+      <div style={{background:"#fff",borderBottom:"1px solid #e8e8e8",padding:"14px 16px",position:"sticky",top:0,zIndex:10}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:32,height:32,background:"#111",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <div style={{width:32,height:32,background:"#111",borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
             <svg viewBox="0 0 80 90" width="18" fill="none"><path d="M22 10 C22 10 20 26 22 34 C24 42 32 46 40 46 C48 46 56 42 58 34 C60 26 58 10 58 10 Z" fill="#fff" opacity="0.9"/><path d="M22 16 C17 16 13 20 13 25 C13 30 17 34 22 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/><path d="M58 16 C63 16 67 20 67 25 C67 30 63 34 58 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/><rect x="36" y="46" width="8" height="14" rx="2" fill="#fff"/><rect x="28" y="60" width="24" height="4" rx="2" fill="#fff"/><polygon points="40,2 42,7.5 48,7.5 43.5,11 45.5,16.5 40,13 34.5,16.5 36.5,11 32,7.5 38,7.5" fill="#fff"/></svg>
           </div>
           <div style={{flex:1}}>
-            <div style={{fontSize:17,fontWeight:600,color:"#111"}}>Repetidas de {username}</div>
+            <div style={{fontSize:14,fontWeight:700,color:"#111"}}>Repetidas de {username}</div>
+            <div style={{fontSize:13,color:"#8e8e93",marginTop:1}}>{totalRep} figurinha{totalRep!==1?"s":""} disponível{totalRep!==1?"is":""} para troca</div>
+          </div>
+          <a href="#" style={{fontSize:13,color:"#8e8e93",textDecoration:"none",fontFamily:"-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif"}}>← Álbum</a>
+        </div>
+      </div>
+
+      <div style={{padding:"12px 14px 32px"}}>
+        {/* Busca */}
+        <div style={{position:"relative",marginBottom:14}}>
+          <div style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",opacity:0.3}}>
+            <Icon name="search" size={13} color="#111"/>
+          </div>
+          <input style={{background:"#fff",border:"1px solid #e5e5ea",borderRadius:10,padding:"10px 12px 10px 30px",color:"#111",fontFamily:"-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif",fontSize:15,outline:"none",width:"100%"}}
+            placeholder="Buscar figurinha..." value={search} onChange={e=>setSearch(e.target.value)}/>
+        </div>
+
+        {filtered.length===0
+          ? <div style={{background:"#fff",border:"1px solid #e5e5ea",borderRadius:10,padding:28,textAlign:"center",color:"#8e8e93",fontSize:12}}>
+              Nenhuma repetida ainda
+            </div>
+          : Object.entries(byGroupAndTeam).map(([g,teams])=>{
+              const groupItems = filtered.filter(s=>s.group===g);
+              const groupQty = groupItems.reduce((acc,s)=>acc+s.qty,0);
+              const isOpen = openGroups[g]!==false;
+              const isSpecial = g==="ESPECIAL";
+              return (
+                <div key={g} style={{marginBottom:10}}>
+                  <button onClick={()=>toggleGroup(g)}
+                    style={{width:"100%",background:"#fff",border:"1px solid #e5e5ea",
+                      borderRadius:isOpen?"8px 8px 0 0":"8px",padding:"12px 14px",
+                      display:"flex",alignItems:"center",justifyContent:"space-between",
+                      cursor:"pointer",borderBottom:isOpen?"1px solid #f0f0f0":"1px solid #e8e8e8"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#111",letterSpacing:0.3,width:28,height:28,background:"#f2f2f7",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        {isSpecial?"★":g}
+                      </div>
+                      <div style={{textAlign:"left"}}>
+                        <div style={{fontSize:14,fontWeight:700,color:"#111"}}>{isSpecial?"Especiais":`Grupo ${g}`}</div>
+                        <div style={{fontSize:13,color:"#c9a84c",fontWeight:600,marginTop:1}}>{groupQty} disponível{groupQty!==1?"is":""}</div>
+                      </div>
+                    </div>
+                    <Icon name={isOpen?"down":"right"} size={14} color="#ccc" sw={2}/>
+                  </button>
+
+                  {isOpen && (
+                    <div style={{background:"#fff",border:"1px solid #e5e5ea",borderTop:"none",borderRadius:"0 0 8px 8px",overflow:"hidden"}}>
+                      {Object.entries(teams).map(([teamKey,teamData],idx)=>(
+                        <div key={teamKey} style={{borderTop:idx>0?"1px solid #f5f5f5":"none"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px 6px",background:"#fafafa"}}>
+                            <FlagBadge code={teamData.code} emoji={teamData.flag} size={28}/>
+                            <div style={{fontSize:13,fontWeight:600,color:"#555"}}>
+                              {teamData.team} <span style={{color:"#c7c7cc",fontWeight:400,fontSize:10}}>({teamData.code})</span>
+                            </div>
+                          </div>
+                          <div style={{padding:"4px 14px 12px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                            {teamData.items.map(s=>(
+                              <div key={s.id} style={{display:"flex",flexDirection:"column"}}>
+                                <div style={{padding:"12px 6px",borderRadius:"8px 8px 0 0",border:"1px solid #111",borderBottom:"none",background:"#111",color:"#fff",fontSize:13,fontWeight:700,letterSpacing:0.3,textAlign:"center",fontFamily:"-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif"}}>
+                                  {s.id}
+                                </div>
+                                <div style={{padding:"5px 0",borderRadius:"0 0 8px 8px",border:"1px solid #e0e0e0",borderTop:"none",background:"#f7f7f7",textAlign:"center",fontSize:13,fontWeight:700,color:"#c9a84c",fontFamily:"-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif"}}>
+                                  ×{s.qty}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+        }
+      </div>
+    </div>
+  );
+}
+
+
+// ─── ABA RANKING (Supabase) ──────────────────────────────────────────────────
+const RankingTab = ({ myStickers, currentUsername }) => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterMissing, setFilterMissing] = useState(true);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [openGroups, setOpenGroups] = useState({});
+  const toggleGroup = g => setOpenGroups(prev=>({...prev,[g]:!prev[g]}));
+  const AF = "-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif";
+
+  // Carregar usuários do public_repeated
+  useEffect(()=>{
+    (async () => {
+      const { data: pubData } = await supabase.from("public_repeated").select("username,repeated_ids,avatar_url");
+      if (!pubData) { setLoading(false); return; }
+      // Buscar total de figurinhas de cada usuário (via stickers)
+      const usernames = pubData.map(p=>p.username);
+      const list = pubData.map(p => ({
+        username: p.username,
+        avatar: p.avatar_url || null,
+        repeated: p.repeated_ids || [],
+        rep: (p.repeated_ids||[]).length,
+        total: 0, // será preenchido abaixo se conseguirmos
+      }));
+      // Tentamos pegar totals (opcional - se não conseguir, fica 0)
+      try {
+        const { data: usersData } = await supabase.from("public_repeated").select("user_id,username");
+        if (usersData) {
+          for (const u of list) {
+            const match = usersData.find(x=>x.username===u.username);
+            if (match) {
+              const { count } = await supabase.from("stickers").select("*",{count:"exact",head:true}).eq("user_id",match.user_id).eq("owned",true);
+              u.total = count || 0;
+            }
+          }
+        }
+      } catch(e){}
+      setUsers(list);
+      setLoading(false);
+    })();
+  },[]);
+
+  const myOwned = useMemo(()=> new Set(Object.entries(myStickers).filter(([,v])=>v.owned).map(([k])=>k)), [myStickers]);
+  const ranked = useMemo(()=> [...users].sort((a,b)=>b.rep-a.rep).map((u,i)=>({...u,rank:i+1})), [users]);
+
+  const userStickers = useMemo(()=>{
+    if (!selectedUser) return [];
+    const all = selectedUser.repeated.map(id=>({id,...ALL[id]})).filter(r=>r.group);
+    if (!filterMissing) return all;
+    return all.filter(s=>!myOwned.has(s.id));
+  },[selectedUser, filterMissing, myOwned]);
+
+  const byGroupAndTeam = useMemo(()=>{
+    const byG={};
+    userStickers.forEach(s=>{if(!byG[s.group])byG[s.group]=[];byG[s.group].push(s)});
+    const result={};
+    Object.entries(byG).forEach(([g,items])=>{
+      const teams={};
+      items.forEach(s=>{
+        const key=s.team||g;
+        if(!teams[key]) teams[key]={team:s.team,code:s.code,flag:s.flag,items:[]};
+        teams[key].items.push(s);
+      });
+      result[g]=teams;
+    });
+    return result;
+  },[userStickers]);
+
+  if (loading) return <div style={{textAlign:"center",padding:40,color:"#8e8e93",fontSize:15,fontFamily:AF}}>Carregando...</div>;
+
+  if (selectedUser) {
+    const useful = filterMissing ? userStickers.length : selectedUser.repeated.length;
+    return (
+      <div>
+        <div style={{background:"#fff",borderBottom:"1px solid #e5e5ea",padding:"14px 16px",position:"sticky",top:0,zIndex:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+            <button onClick={()=>{setSelectedUser(null);setOpenGroups({});}}
+              style={{background:"none",border:"none",cursor:"pointer",padding:4,margin:-4,flexShrink:0}}>
+              <Icon name="back" size={20} color="#111" sw={2}/>
+            </button>
+            <div style={{width:42,height:42,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#111",display:"flex",alignItems:"center",justifyContent:"center",border:"1.5px solid #e5e5ea"}}>
+              {selectedUser.avatar
+                ? <img src={selectedUser.avatar} alt={selectedUser.username} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                : <span style={{fontSize:17,color:"#fff",fontWeight:600}}>{selectedUser.username[0].toUpperCase()}</span>
+              }
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:17,fontWeight:600,color:"#111"}}>@{selectedUser.username}</div>
+              <div style={{fontSize:13,color:"#8e8e93"}}>
+                {selectedUser.rep} repetidas{selectedUser.total>0?` · ${selectedUser.total} figurinhas`:""}
+              </div>
+            </div>
+          </div>
+          <button onClick={()=>setFilterMissing(f=>!f)}
+            style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:filterMissing?"#111":"#f2f2f7",border:"none",borderRadius:10,cursor:"pointer"}}>
+            <span style={{fontSize:14,fontWeight:500,color:filterMissing?"#fff":"#111",fontFamily:AF}}>
+              {filterMissing?"Mostrando só o que você não tem":"Mostrando tudo"}
+            </span>
+            <span style={{fontSize:13,color:filterMissing?"rgba(255,255,255,0.7)":"#8e8e93",fontFamily:AF}}>
+              {useful} figurinha{useful!==1?"s":""}
+            </span>
+          </button>
+        </div>
+
+        <div style={{padding:"12px 16px 32px"}}>
+          {userStickers.length===0
+            ? <div style={{background:"#fff",borderRadius:12,padding:32,textAlign:"center"}}>
+                <div style={{fontSize:32,marginBottom:8}}>🎉</div>
+                <div style={{fontSize:16,fontWeight:600,color:"#111",marginBottom:4}}>Você já tem tudo!</div>
+                <div style={{fontSize:13,color:"#8e8e93"}}>Nenhuma figurinha nova com este usuário</div>
+                <button onClick={()=>setFilterMissing(false)}
+                  style={{marginTop:16,padding:"10px 20px",background:"#f2f2f7",border:"none",borderRadius:10,fontSize:14,color:"#111",cursor:"pointer",fontFamily:AF}}>
+                  Ver todas as repetidas
+                </button>
+              </div>
+            : Object.entries(byGroupAndTeam).map(([g,teams])=>{
+                const groupItems = userStickers.filter(s=>s.group===g);
+                const isOpen = openGroups[g]!==false;
+                const isSpecial = g==="ESPECIAL";
+                return (
+                  <div key={g} style={{marginBottom:10}}>
+                    <button onClick={()=>toggleGroup(g)}
+                      style={{width:"100%",background:"#fff",border:"none",borderRadius:isOpen?"12px 12px 0 0":"12px",padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:12}}>
+                        <div style={{fontSize:13,fontWeight:700,color:"#111",width:30,height:30,background:"#f2f2f7",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {isSpecial?"★":g}
+                        </div>
+                        <div style={{textAlign:"left"}}>
+                          <div style={{fontSize:16,fontWeight:600,color:"#111"}}>{isSpecial?"Especiais":`Grupo ${g}`}</div>
+                          <div style={{fontSize:13,color:"#8e8e93",marginTop:1}}>{groupItems.length} figurinha{groupItems.length!==1?"s":""}</div>
+                        </div>
+                      </div>
+                      <Icon name={isOpen?"down":"right"} size={16} color="#c7c7cc" sw={2}/>
+                    </button>
+                    {isOpen && (
+                      <div style={{background:"#fff",borderRadius:"0 0 12px 12px",overflow:"hidden"}}>
+                        {Object.entries(teams).map(([teamKey,teamData])=>(
+                          <div key={teamKey} style={{borderTop:"1px solid #f2f2f7"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px 6px"}}>
+                              <FlagBadge code={teamData.code} emoji={teamData.flag} size={32}/>
+                              <div style={{fontSize:15,fontWeight:500,color:"#111"}}>
+                                {teamData.team} <span style={{color:"#8e8e93",fontWeight:400,fontSize:13}}>({teamData.code})</span>
+                              </div>
+                            </div>
+                            <div style={{padding:"4px 16px 12px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                              {teamData.items.map(s=>(
+                                <div key={s.id} style={{padding:"12px 6px",borderRadius:10,border:"1px solid #e5e5ea",background:myOwned.has(s.id)?"#f2f2f7":"#fff",color:myOwned.has(s.id)?"#c7c7cc":"#111",fontSize:13,fontWeight:600,textAlign:"center"}}>
+                                  {s.id}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+          }
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{padding:"16px 16px 20px"}}>
+      <div style={{fontSize:13,color:"#8e8e93",marginBottom:16}}>
+        Usuários com mais figurinhas para trocar — toque para ver o que você não tem ainda.
+      </div>
+
+      {ranked.length===0 ? (
+        <div style={{background:"#fff",borderRadius:12,padding:32,textAlign:"center",color:"#8e8e93",fontSize:14}}>
+          Ninguém tem repetidas ainda. Seja o primeiro a marcar!
+        </div>
+      ) : (
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {ranked.map((u,idx)=>{
+            const useful = u.repeated.filter(id=>!myOwned.has(id)).length;
+            const isMe = u.username===currentUsername;
+            return (
+              <button key={u.username} onClick={()=>{if(!isMe){setSelectedUser(u);setOpenGroups({});}}}
+                style={{width:"100%",background:"#fff",border:isMe?"2px solid #111":"none",borderRadius:12,padding:"14px 16px",display:"flex",alignItems:"center",gap:14,cursor:isMe?"default":"pointer",textAlign:"left"}}>
+                <div style={{width:32,height:32,borderRadius:"50%",background:idx===0?"#FFD700":idx===1?"#C0C0C0":idx===2?"#CD7F32":"#f2f2f7",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <span style={{fontSize:14,fontWeight:700,color:idx<3?"#fff":"#8e8e93"}}>{u.rank}</span>
+                </div>
+                <div style={{width:42,height:42,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#111",display:"flex",alignItems:"center",justifyContent:"center",border:"1.5px solid #e5e5ea"}}>
+                  {u.avatar
+                    ? <img src={u.avatar} alt={u.username} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    : <span style={{fontSize:17,color:"#fff",fontWeight:600}}>{u.username[0].toUpperCase()}</span>
+                  }
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <span style={{fontSize:15,fontWeight:600,color:"#111"}}>@{u.username}</span>
+                    {isMe && <span style={{fontSize:11,color:"#fff",background:"#111",padding:"2px 7px",borderRadius:20,fontWeight:600}}>você</span>}
+                  </div>
+                  <div style={{fontSize:13,color:"#8e8e93",marginTop:2}}>
+                    {u.total>0&&<>{u.total} figurinhas · </>}<span style={{color:"#c9a84c",fontWeight:500}}>{u.rep} repetidas</span>
+                  </div>
+                </div>
+                {!isMe && (
+                  <div style={{textAlign:"right",flexShrink:0}}>
+                    <div style={{fontSize:17,fontWeight:700,color:useful>0?"#111":"#c7c7cc"}}>{useful}</div>
+                    <div style={{fontSize:11,color:"#8e8e93"}}>pra você</div>
+                  </div>
+                )}
+                {!isMe && <Icon name="right" size={14} color="#c7c7cc" sw={2}/>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={{marginTop:20,padding:"14px 16px",background:"#fff",borderRadius:12}}>
+        <div style={{fontSize:13,fontWeight:600,color:"#111",marginBottom:4}}>Como funciona?</div>
+        <div style={{fontSize:13,color:"#8e8e93",lineHeight:1.5}}>
+          O número <b style={{color:"#111"}}>"pra você"</b> mostra quantas das repetidas desse usuário você ainda não tem no seu álbum. Quanto maior, mais vale a pena trocar!
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── PERFIL com upload de foto ────────────────────────────────────────────────
+const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange }) => {
+  const [uploading, setUploading] = useState(false);
+  const AF = "-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif";
+
+  async function handleUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2*1024*1024) { alert("Foto muito grande (máx 2MB)"); return; }
+    setUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const ext = file.name.split('.').pop();
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert:true, cacheControl:"0" });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+      const url = `${publicUrl}?t=${Date.now()}`;
+      await supabase.from("public_repeated").update({ avatar_url:url }).eq("user_id", user.id);
+      onAvatarChange?.(url);
+    } catch(err) { alert("Erro ao enviar foto: "+err.message); }
+    setUploading(false);
+  }
+
+  return (
+    <div style={{padding:"16px 16px 20px"}}>
+      <div style={{background:"#fff",borderRadius:14,padding:24,textAlign:"center",marginBottom:10}}>
+        <label style={{cursor:"pointer",display:"inline-block",position:"relative"}}>
+          <div style={{width:80,height:80,background:avatarUrl?"transparent":"#111",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",overflow:"hidden",border:"2px solid #e5e5ea"}}>
+            {avatarUrl
+              ? <img src={avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              : <span style={{fontSize:28,color:"#fff",fontWeight:600,fontFamily:AF}}>{(username||"?")[0].toUpperCase()}</span>
+            }
+          </div>
+          <div style={{position:"absolute",bottom:14,right:"calc(50% - 48px)",width:28,height:28,borderRadius:"50%",background:"#111",display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid #fff"}}>
+            <Icon name="plus" size={14} color="#fff" sw={2.5}/>
+          </div>
+          <input type="file" accept="image/*" onChange={handleUpload} style={{display:"none"}} disabled={uploading}/>
+        </label>
+        <div style={{fontSize:17,fontWeight:600,color:"#111"}}>{username||""}</div>
+        <div style={{fontSize:13,color:"#8e8e93",marginTop:3}}>{email||""}</div>
+        {uploading&&<div style={{fontSize:12,color:"#8e8e93",marginTop:8}}>Enviando foto...</div>}
+      </div>
+      <button onClick={onSignOut} style={{width:"100%",padding:"13px",background:"#fff",border:"none",borderRadius:12,color:"#dc2626",fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:AF}}>
+        Sair da conta
+      </button>
+    </div>
+  );
+};
+
+// ─── PÁGINA PÚBLICA ───────────────────────────────────────────────────────────
+function PublicRepeatedPage({ username }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [updatedAt, setUpdatedAt] = useState(null);
+  const [search, setSearch] = useState("");
+  const [openGroups, setOpenGroups] = useState({});
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const toggleGroup = g => setOpenGroups(prev=>({...prev,[g]:!prev[g]}));
+  const APPLE_FONT = "-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif";
+
+  useEffect(() => {
+    supabase.from("public_repeated").select("repeated_ids,updated_at,avatar_url").eq("username", username).single()
+      .then(({ data }) => {
+        if (data) { setRows(data.repeated_ids||[]); setAvatarUrl(data.avatar_url||null); setUpdatedAt(new Date(data.updated_at).toLocaleString("pt-BR")); }
+        setLoading(false);
+      });
+  }, [username]);
+
+  const rep = useMemo(() => rows.map(id=>({id,...ALL[id]})).filter(r=>r.group), [rows]);
+  const totalRep = rep.length;
+  const filtered = useMemo(()=>{
+    if (!search.trim()) return rep;
+    const q = search.toUpperCase();
+    return rep.filter(r=>r.id.includes(q)||(r.team||"").toUpperCase().includes(q));
+  },[rep,search]);
+  const byGroupAndTeam = useMemo(()=>{
+    const byG={};
+    filtered.forEach(s=>{if(!byG[s.group])byG[s.group]=[];byG[s.group].push(s)});
+    const result={};
+    Object.entries(byG).forEach(([g,items])=>{
+      const teams={};
+      items.forEach(s=>{
+        const key=s.team||g;
+        if(!teams[key]) teams[key]={team:s.team,code:s.code,flag:s.flag,items:[]};
+        teams[key].items.push(s);
+      });
+      result[g]=teams;
+    });
+    return result;
+  },[filtered]);
+
+  return (
+    <div style={{minHeight:"100vh",background:"#f2f2f7",fontFamily:APPLE_FONT}}>
+      <style>{`*{box-sizing:border-box}body{margin:0;background:#f2f2f7}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:2px}input{font-family:${APPLE_FONT}}`}</style>
+      <div style={{background:"#fff",borderBottom:"1px solid #e5e5ea",padding:"14px 16px",position:"sticky",top:0,zIndex:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:42,height:42,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#111",display:"flex",alignItems:"center",justifyContent:"center",border:"1.5px solid #e5e5ea"}}>
+            {avatarUrl
+              ? <img src={avatarUrl} alt={username} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              : <span style={{fontSize:17,color:"#fff",fontWeight:600}}>{username[0].toUpperCase()}</span>
+            }
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:17,fontWeight:600,color:"#111"}}>@{username}</div>
             <div style={{fontSize:13,color:"#8e8e93",marginTop:1}}>{totalRep} disponível{totalRep!==1?"is":""} para troca</div>
           </div>
           <a href="/" style={{fontSize:13,color:"#8e8e93",textDecoration:"none"}}>← Álbum</a>
@@ -837,10 +1240,8 @@ function PublicRepeatedPage({ username }) {
       </div>
 
       <div style={{padding:"16px 16px 32px"}}>
-        {loading ? (
-          <div style={{textAlign:"center",padding:40,color:"#8e8e93",fontSize:15}}>Carregando...</div>
-        ) : (
-          <>
+        {loading ? <div style={{textAlign:"center",padding:40,color:"#8e8e93",fontSize:15}}>Carregando...</div>
+        : <>
             <div style={{position:"relative",marginBottom:14}}>
               <div style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",opacity:0.4}}>
                 <Icon name="search" size={16} color="#111"/>
@@ -848,12 +1249,10 @@ function PublicRepeatedPage({ username }) {
               <input style={{background:"#fff",border:"none",borderRadius:10,padding:"12px 14px 12px 38px",color:"#111",fontSize:15,outline:"none",width:"100%"}}
                 placeholder="Buscar figurinha" value={search} onChange={e=>setSearch(e.target.value)}/>
             </div>
-
             {filtered.length===0
               ? <div style={{background:"#fff",borderRadius:12,padding:28,textAlign:"center",color:"#8e8e93",fontSize:15}}>Nenhuma repetida encontrada</div>
               : Object.entries(byGroupAndTeam).map(([g,teams])=>{
                   const groupItems = filtered.filter(s=>s.group===g);
-                  const groupQty = groupItems.length;
                   const isOpen = openGroups[g]!==false;
                   const isSpecial = g==="ESPECIAL";
                   return (
@@ -866,14 +1265,14 @@ function PublicRepeatedPage({ username }) {
                           </div>
                           <div style={{textAlign:"left"}}>
                             <div style={{fontSize:17,fontWeight:600,color:"#111"}}>{isSpecial?"Especiais":`Grupo ${g}`}</div>
-                            <div style={{fontSize:13,color:"#c9a84c",fontWeight:500,marginTop:1}}>{groupQty} disponível{groupQty!==1?"is":""}</div>
+                            <div style={{fontSize:13,color:"#c9a84c",fontWeight:500,marginTop:1}}>{groupItems.length} disponível{groupItems.length!==1?"is":""}</div>
                           </div>
                         </div>
                         <Icon name={isOpen?"down":"right"} size={16} color="#c7c7cc" sw={2}/>
                       </button>
                       {isOpen && (
                         <div style={{background:"#fff",borderRadius:"0 0 12px 12px",overflow:"hidden"}}>
-                          {Object.entries(teams).map(([teamKey,teamData],idx)=>(
+                          {Object.entries(teams).map(([teamKey,teamData])=>(
                             <div key={teamKey} style={{borderTop:"1px solid #f2f2f7"}}>
                               <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px 6px"}}>
                                 <FlagBadge code={teamData.code} emoji={teamData.flag} size={32}/>
@@ -883,13 +1282,8 @@ function PublicRepeatedPage({ username }) {
                               </div>
                               <div style={{padding:"4px 16px 12px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
                                 {teamData.items.map(s=>(
-                                  <div key={s.id} style={{display:"flex",flexDirection:"column"}}>
-                                    <div style={{padding:"12px 6px",borderRadius:"8px 8px 0 0",border:"1px solid #111",borderBottom:"none",background:"#111",color:"#fff",fontSize:13,fontWeight:600,textAlign:"center"}}>
-                                      {s.id}
-                                    </div>
-                                    <div style={{padding:"5px 0",borderRadius:"0 0 8px 8px",border:"1px solid #e5e5ea",borderTop:"none",background:"#f7f7f7",textAlign:"center",fontSize:13,fontWeight:600,color:"#c9a84c"}}>
-                                      ×{s.qty||1}
-                                    </div>
+                                  <div key={s.id} style={{padding:"12px 6px",borderRadius:10,border:"1px solid #e5e5ea",background:"#fff",color:"#111",fontSize:13,fontWeight:600,textAlign:"center"}}>
+                                    {s.id}
                                   </div>
                                 ))}
                               </div>
@@ -903,7 +1297,7 @@ function PublicRepeatedPage({ username }) {
             }
             {updatedAt&&<div style={{textAlign:"center",fontSize:13,color:"#c7c7cc",marginTop:16}}>Atualizado em {updatedAt}</div>}
           </>
-        )}
+        }
       </div>
     </div>
   );
@@ -983,6 +1377,7 @@ export default function App() {
   const [tab, setTab] = useState("album");
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const APPLE_FONT = "-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif";
 
   useEffect(() => {
@@ -999,6 +1394,8 @@ export default function App() {
         data?.forEach(r => { m[r.sticker_id] = { owned: r.owned, qty: r.qty||0 }; });
         setStickers(m);
       });
+    supabase.from("public_repeated").select("avatar_url").eq("user_id", session.user.id).single()
+      .then(({ data }) => { if (data?.avatar_url) setAvatarUrl(data.avatar_url); });
   }, [session]);
 
   const syncPublic = useCallback(async (updated) => {
@@ -1054,7 +1451,13 @@ export default function App() {
     </svg>
   );
 
-  const NAV = [{id:"album",icon:"album",label:"Álbum"},{id:"stats",icon:"chart",label:"Resumo"},{id:"share",icon:"repeat",label:"Repetidas"},{id:"profile",icon:"user",label:"Perfil"}];
+  const NAV = [
+    {id:"album",   icon:"album",   label:"Álbum"},
+    {id:"stats",   icon:"chart",   label:"Stats"},
+    {id:"share",   icon:"repeat",  label:"Trocar"},
+    {id:"ranking", icon:"ranking", label:"Ranking"},
+    {id:"profile", icon:"user",    label:"Perfil"},
+  ];
 
   const content = selectedTeam
     ? selectedTeam.isSpecial
@@ -1062,9 +1465,10 @@ export default function App() {
       : <TeamScreen team={selectedTeam} stickers={stickers} onToggle={toggle} onToggleRep={toggleRep} onBack={()=>setSelectedTeam(null)}/>
     : <>
         {tab==="album"   && <AlbumTab stickers={stickers} onSelectTeam={t=>setSelectedTeam(t)}/>}
-        {tab==="stats"   && <ResumoTab stickers={stickers}/>}
-        {tab==="share"   && <RepetidasTab stickers={stickers} onToggleRep={toggleRep} onShare={handleShare}/>}
-        {tab==="profile" && <PerfilTab username={username} email={email} onSignOut={()=>supabase.auth.signOut()}/>}
+        {tab==="stats"   && <StatsTab stickers={stickers}/>}
+        {tab==="share"   && <TrocarTab stickers={stickers} onToggleRep={toggleRep} onShare={handleShare}/>}
+        {tab==="ranking" && <RankingTab myStickers={stickers} currentUsername={username}/>}
+        {tab==="profile" && <PerfilTabReal username={username} email={email} avatarUrl={avatarUrl} onSignOut={()=>supabase.auth.signOut()} onAvatarChange={setAvatarUrl}/>}
       </>;
 
   return (
@@ -1115,9 +1519,19 @@ export default function App() {
             );})}
           </nav>
           <div style={{padding:"16px 20px",borderTop:"1px solid #f2f2f7"}}>
-            <div style={{fontSize:15,fontWeight:500,color:"#111"}}>{username}</div>
-            <div style={{fontSize:13,color:"#8e8e93",marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{email}</div>
-            <button onClick={()=>supabase.auth.signOut()} style={{marginTop:10,width:"100%",padding:"8px",background:"none",border:"1px solid #e5e5ea",borderRadius:8,color:"#8e8e93",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+              <div style={{width:32,height:32,borderRadius:"50%",overflow:"hidden",background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"1.5px solid #e5e5ea"}}>
+                {avatarUrl
+                  ? <img src={avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  : <span style={{fontSize:14,color:"#fff",fontWeight:600}}>{(username||"?")[0].toUpperCase()}</span>
+                }
+              </div>
+              <div style={{minWidth:0,flex:1}}>
+                <div style={{fontSize:14,fontWeight:500,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{username}</div>
+                <div style={{fontSize:12,color:"#8e8e93",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{email}</div>
+              </div>
+            </div>
+            <button onClick={()=>supabase.auth.signOut()} style={{width:"100%",padding:"8px",background:"none",border:"1px solid #e5e5ea",borderRadius:8,color:"#8e8e93",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
               <Icon name="logout" size={13} color="#8e8e93" sw={2}/> Sair
             </button>
           </div>

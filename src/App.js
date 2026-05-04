@@ -778,11 +778,12 @@ const PerfilTab = ({ username, email, onSignOut }) => (
 );
 
 // ─── PÁGINA PÚBLICA ───────────────────────────────────────────────────────────
-//function PublicRepeatedPage({ username, stickers: demoStickers }) {
+/*
+function PublicRepeatedPage({ username, stickers: demoStickers }) {
   const [search, setSearch] = useState("");
   const [openGroups, setOpenGroups] = useState({});
   const toggleGroup = g => setOpenGroups(prev=>({...prev,[g]:!prev[g]}));
-
+  
   // Simula dados públicos a partir das figurinhas do demo
   const rep = useMemo(()=>
     Object.entries(demoStickers||{})
@@ -903,6 +904,7 @@ const PerfilTab = ({ username, email, onSignOut }) => (
     </div>
   );
 }
+*/
 
 
 // ─── PÁGINA PÚBLICA ───────────────────────────────────────────────────────────

@@ -980,7 +980,7 @@ const RankingTab = ({ myStickers, currentUsername }) => {
                 {!isMe && (
                   <div style={{textAlign:"right",flexShrink:0}}>
                     <div style={{fontSize:17,fontWeight:700,color:useful>0?"#111":"#c7c7cc"}}>{useful}</div>
-                    <div style={{fontSize:11,color:"#8e8e93"}}>pra você</div>
+                    <div style={{fontSize:11,color:"#8e8e93"}}>match</div>
                   </div>
                 )}
                 {!isMe && <Icon name="right" size={14} color="#c7c7cc" sw={2}/>}
@@ -993,7 +993,7 @@ const RankingTab = ({ myStickers, currentUsername }) => {
       <div style={{marginTop:20,padding:"14px 16px",background:"#fff",borderRadius:12}}>
         <div style={{fontSize:13,fontWeight:600,color:"#111",marginBottom:4}}>Como funciona?</div>
         <div style={{fontSize:13,color:"#8e8e93",lineHeight:1.5}}>
-          O número <b style={{color:"#111"}}>"pra você"</b> mostra quantas das repetidas desse usuário você ainda não tem no seu álbum. Quanto maior, mais vale a pena trocar!
+          O número <b style={{color:"#111"}}>"match"</b> mostra quantas das repetidas desse usuário você ainda não tem no seu álbum.
         </div>
       </div>
     </div>

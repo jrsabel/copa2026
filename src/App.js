@@ -778,7 +778,7 @@ const PerfilTab = ({ username, email, onSignOut }) => (
 );
 
 // ─── PÁGINA PÚBLICA ───────────────────────────────────────────────────────────
-function PublicRepeatedPage({ username, stickers: demoStickers }) {
+//function PublicRepeatedPage({ username, stickers: demoStickers }) {
   const [search, setSearch] = useState("");
   const [openGroups, setOpenGroups] = useState({});
   const toggleGroup = g => setOpenGroups(prev=>({...prev,[g]:!prev[g]}));

@@ -981,7 +981,7 @@ const RankingTab = ({ myStickers, currentUsername }) => {
                 {!isMe && (
                   <div style={{textAlign:"right",flexShrink:0}}>
                     <div style={{fontSize:17,fontWeight:700,color:useful>0?"#111":"#c7c7cc"}}>{useful}</div>
-                    <div style={{fontSize:11,color:"#8e8e93"}}>match</div>
+                    <div style={{fontSize:11,color:"#8e8e93"}}>pra você</div>
                   </div>
                 )}
                 {!isMe && <Icon name="right" size={14} color="#c7c7cc" sw={2}/>}
@@ -994,7 +994,7 @@ const RankingTab = ({ myStickers, currentUsername }) => {
       <div style={{marginTop:20,padding:"14px 16px",background:"#fff",borderRadius:12}}>
         <div style={{fontSize:13,fontWeight:600,color:"#111",marginBottom:4}}>Como funciona?</div>
         <div style={{fontSize:13,color:"#8e8e93",lineHeight:1.5}}>
-          O número <b style={{color:"#111"}}>"match"</b> mostra quantas das repetidas desse usuário você ainda não tem no seu álbum.
+          O número <b style={{color:"#111"}}>"pra você"</b> mostra quantas das repetidas desse usuário você ainda não tem no seu álbum. Quanto maior, mais vale a pena trocar!
         </div>
       </div>
     </div>
@@ -1068,9 +1068,8 @@ const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange }
 
       {/* Trocar senha */}
       {!showPwd ? (
-        <button onClick={()=>setShowPwd(true)} style={{width:"100%",padding:"13px",background:"#fff",border:"none",borderRadius:12,color:"#111",fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:AF,marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span>Trocar senha</span>
-          <Icon name="right" size={14} color="#c7c7cc" sw={2}/>
+        <button onClick={()=>setShowPwd(true)} style={{width:"100%",padding:"13px",background:"#fff",border:"none",borderRadius:12,color:"#111",fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:AF,marginBottom:10,textAlign:"center"}}>
+          Trocar senha
         </button>
       ) : (
         <div style={{background:"#fff",borderRadius:12,padding:18,marginBottom:10}}>
@@ -1275,7 +1274,7 @@ function AuthScreen({ onLogin }) {
     }
 
     // CADASTRO
-    if (cooldown > 0) { setError(`Aguarde ${cooldown}s antes de tentar novamente.`); return; }
+    if (cooldown > 0) return; // botão já mostra o tempo
     if (!username.trim()) { setError("Escolha um nome de usuário."); return; }
     const uErr = validateUsername(username.trim());
     if (uErr) { setError(uErr); return; }
@@ -1283,7 +1282,7 @@ function AuthScreen({ onLogin }) {
 
     setLoading(true);
 
-    // 1. Verifica se username já existe (busca em public_repeated)
+    // 1. Verifica se username já existe
     const { data: existing } = await supabase.from("public_repeated").select("username").eq("username", username.trim().toLowerCase()).maybeSingle();
     if (existing) {
       setError("Este nome de usuário já está em uso. Escolha outro.");
@@ -1303,8 +1302,8 @@ function AuthScreen({ onLogin }) {
       if (msg.includes("already registered") || msg.includes("already exists")) {
         setError("Este e-mail já está cadastrado. Faça login.");
       } else if (msg.includes("rate limit") || err.status === 429) {
-        setCooldown(60);
-        setError("Muitas tentativas. Aguarde 60 segundos.");
+        setCooldown(180);
+        setError("Muitas tentativas. Aguarde antes de tentar de novo.");
       } else if (msg.includes("invalid email")) {
         setError("E-mail inválido.");
       } else {
@@ -1316,8 +1315,8 @@ function AuthScreen({ onLogin }) {
 
     if (data.user && !data.session) {
       setPendingEmail(email);
-      setInfo("Conta criada! Verifique seu e-mail para confirmar antes de entrar.");
-      setCooldown(30); // evita spam
+      setInfo("Conta criada! Enviamos um e-mail de confirmação. Verifique sua caixa de entrada (ou spam) e clique no link para ativar.");
+      setCooldown(60);
     } else if (data.user) {
       onLogin(data.user);
     }
@@ -1325,22 +1324,26 @@ function AuthScreen({ onLogin }) {
   }
 
   async function resendConfirmation() {
-    if (!pendingEmail) return;
-    if (cooldown > 0) { setError(`Aguarde ${cooldown}s para reenviar.`); return; }
+    if (!pendingEmail || cooldown > 0) return;
     setError(""); setInfo(""); setLoading(true);
     const { error: err } = await supabase.auth.resend({ type:"signup", email: pendingEmail });
     setLoading(false);
     if (err) {
       if (err.status === 429 || err.message.toLowerCase().includes("rate")) {
-        setCooldown(60);
-        setError("Muitas tentativas. Aguarde 60 segundos.");
+        setCooldown(180);
+        setError("Muitas tentativas. Aguarde antes de reenviar.");
       } else {
         setError(err.message);
       }
       return;
     }
-    setInfo("E-mail de confirmação reenviado!");
-    setCooldown(45);
+    setInfo("E-mail de confirmação reenviado! Verifique sua caixa de entrada.");
+    setCooldown(60);
+  }
+
+  function fmtTime(s) {
+    if (s >= 60) return `${Math.floor(s/60)}m ${s%60}s`;
+    return `${s}s`;
   }
 
   const inp = { width:"100%", padding:"12px 14px", border:"none", background:"#f2f2f7", borderRadius:10, fontSize:15, outline:"none", color:"#111", fontFamily:APPLE_FONT };
@@ -1370,7 +1373,7 @@ function AuthScreen({ onLogin }) {
             {error&&<div style={{background:"#fef2f2",borderRadius:8,padding:"10px 12px",fontSize:13,color:"#dc2626"}}>{error}</div>}
             {info&&<div style={{background:"#eff6ff",borderRadius:8,padding:"10px 12px",fontSize:13,color:"#2563eb"}}>{info}</div>}
             <button onClick={handle} disabled={loading||cooldown>0} style={{padding:"14px",background:loading||cooldown>0?"#999":"#111",border:"none",borderRadius:10,color:"#fff",fontSize:15,fontWeight:600,cursor:loading||cooldown>0?"not-allowed":"pointer",fontFamily:APPLE_FONT,marginTop:4}}>
-              {loading?"Carregando...":cooldown>0?`Aguarde ${cooldown}s`:mode==="login"?"Entrar":"Criar conta"}
+              {loading?"Carregando...":cooldown>0?`Aguarde ${fmtTime(cooldown)}`:mode==="login"?"Entrar":"Criar conta"}
             </button>
             {pendingEmail && (
               <button onClick={resendConfirmation} disabled={loading||cooldown>0}

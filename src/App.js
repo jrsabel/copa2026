@@ -551,8 +551,8 @@ const AlbumTab = ({ stickers, onSelectTeam }) => {
   );
 };
 
-// ─── ABA STATS ────────────────────────────────────────────────────────────────
-const StatsTab = ({ stickers }) => {
+// ─── ABA RESUMO ────────────────────────────────────────────────────────────────
+const ResumoTab = ({ stickers }) => {
   const owned = Object.values(stickers).filter(s=>s.owned).length;
   const totalRep = Object.values(stickers).reduce((acc,s)=>acc+(s.qty||0),0);
   const pct = Math.round((owned/TOTAL)*100);
@@ -1054,7 +1054,7 @@ export default function App() {
     </svg>
   );
 
-  const NAV = [{id:"album",icon:"album",label:"Álbum"},{id:"stats",icon:"chart",label:"Stats"},{id:"share",icon:"repeat",label:"Repetidas"},{id:"profile",icon:"user",label:"Perfil"}];
+  const NAV = [{id:"album",icon:"album",label:"Álbum"},{id:"stats",icon:"chart",label:"Resumo"},{id:"share",icon:"repeat",label:"Repetidas"},{id:"profile",icon:"user",label:"Perfil"}];
 
   const content = selectedTeam
     ? selectedTeam.isSpecial
@@ -1062,7 +1062,7 @@ export default function App() {
       : <TeamScreen team={selectedTeam} stickers={stickers} onToggle={toggle} onToggleRep={toggleRep} onBack={()=>setSelectedTeam(null)}/>
     : <>
         {tab==="album"   && <AlbumTab stickers={stickers} onSelectTeam={t=>setSelectedTeam(t)}/>}
-        {tab==="stats"   && <StatsTab stickers={stickers}/>}
+        {tab==="stats"   && <ResumoTab stickers={stickers}/>}
         {tab==="share"   && <RepetidasTab stickers={stickers} onToggleRep={toggleRep} onShare={handleShare}/>}
         {tab==="profile" && <PerfilTab username={username} email={email} onSignOut={()=>supabase.auth.signOut()}/>}
       </>;

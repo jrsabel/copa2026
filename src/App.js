@@ -551,8 +551,8 @@ const AlbumTab = ({ stickers, onSelectTeam }) => {
   );
 };
 
-// ─── ABA RESUMO ────────────────────────────────────────────────────────────────
-const ResumoTab = ({ stickers }) => {
+// ─── ABA STATS ────────────────────────────────────────────────────────────────
+const StatsTab = ({ stickers }) => {
   const owned = Object.values(stickers).filter(s=>s.owned).length;
   const totalRep = Object.values(stickers).reduce((acc,s)=>acc+(s.qty||0),0);
   const pct = Math.round((owned/TOTAL)*100);
@@ -597,8 +597,8 @@ const ResumoTab = ({ stickers }) => {
   );
 };
 
-// ─── ABA REPETIDAS ───────────────────────────────────────────────────────────────
-const RepetidasTab = ({ stickers, onToggleRep, onShowPublic }) => {
+// ─── ABA TROCAR ───────────────────────────────────────────────────────────────
+const TrocarTab = ({ stickers, onToggleRep, onShowPublic }) => {
   const [search, setSearch] = useState("");
   const [openGroups, setOpenGroups] = useState({});
   const toggleGroup = g => setOpenGroups(prev=>({...prev,[g]:!prev[g]}));
@@ -776,6 +776,7 @@ const PerfilTab = ({ onSignOut }) => (
     </button>
   </div>
 );
+
 
 // ─── ABA RANKING (Supabase) ──────────────────────────────────────────────────
 const RankingTab = ({ myStickers, currentUsername }) => {
@@ -1003,6 +1004,12 @@ const RankingTab = ({ myStickers, currentUsername }) => {
 // ─── PERFIL com upload de foto ────────────────────────────────────────────────
 const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange }) => {
   const [uploading, setUploading] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [pwdError, setPwdError] = useState("");
+  const [pwdInfo, setPwdInfo] = useState("");
+  const [pwdLoading, setPwdLoading] = useState(false);
   const AF = "-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif";
 
   async function handleUpload(e) {
@@ -1024,6 +1031,21 @@ const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange }
     setUploading(false);
   }
 
+  async function handleChangePwd() {
+    setPwdError(""); setPwdInfo("");
+    if (newPwd.length < 6) { setPwdError("Senha precisa ter ao menos 6 caracteres."); return; }
+    if (newPwd !== confirmPwd) { setPwdError("As senhas não coincidem."); return; }
+    setPwdLoading(true);
+    const { error: err } = await supabase.auth.updateUser({ password: newPwd });
+    setPwdLoading(false);
+    if (err) { setPwdError(err.message); return; }
+    setPwdInfo("Senha alterada com sucesso!");
+    setNewPwd(""); setConfirmPwd("");
+    setTimeout(()=>{ setShowPwd(false); setPwdInfo(""); }, 1500);
+  }
+
+  const inp = { width:"100%", padding:"12px 14px", border:"none", background:"#f2f2f7", borderRadius:10, fontSize:15, outline:"none", color:"#111", fontFamily:AF };
+
   return (
     <div style={{padding:"16px 16px 20px"}}>
       <div style={{background:"#fff",borderRadius:14,padding:24,textAlign:"center",marginBottom:10}}>
@@ -1043,6 +1065,35 @@ const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange }
         <div style={{fontSize:13,color:"#8e8e93",marginTop:3}}>{email||""}</div>
         {uploading&&<div style={{fontSize:12,color:"#8e8e93",marginTop:8}}>Enviando foto...</div>}
       </div>
+
+      {/* Trocar senha */}
+      {!showPwd ? (
+        <button onClick={()=>setShowPwd(true)} style={{width:"100%",padding:"13px",background:"#fff",border:"none",borderRadius:12,color:"#111",fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:AF,marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <span>Trocar senha</span>
+          <Icon name="right" size={14} color="#c7c7cc" sw={2}/>
+        </button>
+      ) : (
+        <div style={{background:"#fff",borderRadius:12,padding:18,marginBottom:10}}>
+          <div style={{fontSize:15,fontWeight:600,color:"#111",marginBottom:14}}>Trocar senha</div>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <input type="password" value={newPwd} onChange={e=>setNewPwd(e.target.value)} placeholder="Nova senha (mín 6)" style={inp}/>
+            <input type="password" value={confirmPwd} onChange={e=>setConfirmPwd(e.target.value)} placeholder="Confirme a nova senha" style={inp}/>
+            {pwdError&&<div style={{background:"#fef2f2",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#dc2626"}}>{pwdError}</div>}
+            {pwdInfo&&<div style={{background:"#f0fdf4",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#16a34a"}}>{pwdInfo}</div>}
+            <div style={{display:"flex",gap:8,marginTop:4}}>
+              <button onClick={()=>{setShowPwd(false);setNewPwd("");setConfirmPwd("");setPwdError("");setPwdInfo("");}}
+                style={{flex:1,padding:"11px",background:"#f2f2f7",border:"none",borderRadius:10,color:"#111",fontSize:14,fontWeight:500,cursor:"pointer",fontFamily:AF}}>
+                Cancelar
+              </button>
+              <button onClick={handleChangePwd} disabled={pwdLoading}
+                style={{flex:1,padding:"11px",background:"#111",border:"none",borderRadius:10,color:"#fff",fontSize:14,fontWeight:600,cursor:pwdLoading?"not-allowed":"pointer",fontFamily:AF}}>
+                {pwdLoading?"Salvando...":"Salvar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <button onClick={onSignOut} style={{width:"100%",padding:"13px",background:"#fff",border:"none",borderRadius:12,color:"#dc2626",fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:AF}}>
         Sair da conta
       </button>
@@ -1184,24 +1235,112 @@ function AuthScreen({ onLogin }) {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0); // segundos restantes para próximo signup
+  const [pendingEmail, setPendingEmail] = useState(""); // email com confirmação pendente
   const APPLE_FONT = "-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif";
+
+  // Tick do cooldown
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(()=>setCooldown(c=>c-1), 1000);
+    return ()=>clearTimeout(t);
+  }, [cooldown]);
+
+  function validateUsername(u) {
+    if (u.length < 3) return "Usuário precisa ter ao menos 3 caracteres.";
+    if (u.length > 20) return "Usuário muito longo (máx 20).";
+    if (!/^[a-z0-9_]+$/i.test(u)) return "Use apenas letras, números e underscore.";
+    return null;
+  }
 
   async function handle() {
     setError(""); setInfo("");
     if (!email.trim() || !password.trim()) { setError("Preencha todos os campos."); return; }
-    if (mode === "register" && !username.trim()) { setError("Escolha um nome de usuário."); return; }
-    setLoading(true);
+
     if (mode === "login") {
+      setLoading(true);
       const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
-      if (err) { setError("E-mail ou senha incorretos."); setLoading(false); return; }
+      setLoading(false);
+      if (err) {
+        if (err.message.toLowerCase().includes("email not confirmed")) {
+          setPendingEmail(email);
+          setError("E-mail ainda não confirmado. Verifique sua caixa ou reenvie abaixo.");
+        } else {
+          setError("E-mail ou senha incorretos.");
+        }
+        return;
+      }
       onLogin(data.user);
-    } else {
-      const { data, error: err } = await supabase.auth.signUp({ email, password, options: { data: { username } } });
-      if (err) { setError(err.message); setLoading(false); return; }
-      if (data.user && !data.session) setInfo("Verifique seu e-mail para confirmar.");
-      else if (data.user) onLogin(data.user);
+      return;
+    }
+
+    // CADASTRO
+    if (cooldown > 0) { setError(`Aguarde ${cooldown}s antes de tentar novamente.`); return; }
+    if (!username.trim()) { setError("Escolha um nome de usuário."); return; }
+    const uErr = validateUsername(username.trim());
+    if (uErr) { setError(uErr); return; }
+    if (password.length < 6) { setError("Senha precisa ter ao menos 6 caracteres."); return; }
+
+    setLoading(true);
+
+    // 1. Verifica se username já existe (busca em public_repeated)
+    const { data: existing } = await supabase.from("public_repeated").select("username").eq("username", username.trim().toLowerCase()).maybeSingle();
+    if (existing) {
+      setError("Este nome de usuário já está em uso. Escolha outro.");
+      setLoading(false);
+      return;
+    }
+
+    // 2. Tenta criar conta
+    const { data, error: err } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { username: username.trim().toLowerCase() } }
+    });
+
+    if (err) {
+      const msg = err.message.toLowerCase();
+      if (msg.includes("already registered") || msg.includes("already exists")) {
+        setError("Este e-mail já está cadastrado. Faça login.");
+      } else if (msg.includes("rate limit") || err.status === 429) {
+        setCooldown(60);
+        setError("Muitas tentativas. Aguarde 60 segundos.");
+      } else if (msg.includes("invalid email")) {
+        setError("E-mail inválido.");
+      } else {
+        setError(err.message);
+      }
+      setLoading(false);
+      return;
+    }
+
+    if (data.user && !data.session) {
+      setPendingEmail(email);
+      setInfo("Conta criada! Verifique seu e-mail para confirmar antes de entrar.");
+      setCooldown(30); // evita spam
+    } else if (data.user) {
+      onLogin(data.user);
     }
     setLoading(false);
+  }
+
+  async function resendConfirmation() {
+    if (!pendingEmail) return;
+    if (cooldown > 0) { setError(`Aguarde ${cooldown}s para reenviar.`); return; }
+    setError(""); setInfo(""); setLoading(true);
+    const { error: err } = await supabase.auth.resend({ type:"signup", email: pendingEmail });
+    setLoading(false);
+    if (err) {
+      if (err.status === 429 || err.message.toLowerCase().includes("rate")) {
+        setCooldown(60);
+        setError("Muitas tentativas. Aguarde 60 segundos.");
+      } else {
+        setError(err.message);
+      }
+      return;
+    }
+    setInfo("E-mail de confirmação reenviado!");
+    setCooldown(45);
   }
 
   const inp = { width:"100%", padding:"12px 14px", border:"none", background:"#f2f2f7", borderRadius:10, fontSize:15, outline:"none", color:"#111", fontFamily:APPLE_FONT };
@@ -1218,21 +1357,27 @@ function AuthScreen({ onLogin }) {
         <div style={{background:"#fff",borderRadius:14,padding:22}}>
           <div style={{display:"flex",background:"#f2f2f7",borderRadius:9,padding:3,marginBottom:20}}>
             {["login","register"].map(m=>(
-              <button key={m} onClick={()=>{setMode(m);setError("");setInfo("");}}
+              <button key={m} onClick={()=>{setMode(m);setError("");setInfo("");setPendingEmail("");}}
                 style={{flex:1,padding:"8px",border:"none",background:mode===m?"#fff":"transparent",color:"#111",fontSize:14,fontWeight:mode===m?600:400,cursor:"pointer",borderRadius:7,fontFamily:APPLE_FONT,boxShadow:mode===m?"0 1px 3px rgba(0,0,0,0.08)":"none"}}>
                 {m==="login"?"Entrar":"Cadastrar"}
               </button>
             ))}
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {mode==="register"&&<input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Nome de usuário" style={inp}/>}
+            {mode==="register"&&<input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Nome de usuário (3-20, sem espaços)" style={inp} maxLength={20}/>}
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="E-mail" style={inp}/>
-            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Senha" onKeyDown={e=>e.key==="Enter"&&handle()} style={inp}/>
+            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Senha (mínimo 6 caracteres)" onKeyDown={e=>e.key==="Enter"&&handle()} style={inp}/>
             {error&&<div style={{background:"#fef2f2",borderRadius:8,padding:"10px 12px",fontSize:13,color:"#dc2626"}}>{error}</div>}
             {info&&<div style={{background:"#eff6ff",borderRadius:8,padding:"10px 12px",fontSize:13,color:"#2563eb"}}>{info}</div>}
-            <button onClick={handle} disabled={loading} style={{padding:"14px",background:"#111",border:"none",borderRadius:10,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:APPLE_FONT,marginTop:4}}>
-              {loading?"Carregando...":mode==="login"?"Entrar":"Criar conta"}
+            <button onClick={handle} disabled={loading||cooldown>0} style={{padding:"14px",background:loading||cooldown>0?"#999":"#111",border:"none",borderRadius:10,color:"#fff",fontSize:15,fontWeight:600,cursor:loading||cooldown>0?"not-allowed":"pointer",fontFamily:APPLE_FONT,marginTop:4}}>
+              {loading?"Carregando...":cooldown>0?`Aguarde ${cooldown}s`:mode==="login"?"Entrar":"Criar conta"}
             </button>
+            {pendingEmail && (
+              <button onClick={resendConfirmation} disabled={loading||cooldown>0}
+                style={{padding:"10px",background:"transparent",border:"1px solid #e5e5ea",borderRadius:10,color:"#111",fontSize:13,fontWeight:500,cursor:loading||cooldown>0?"not-allowed":"pointer",fontFamily:APPLE_FONT,opacity:cooldown>0?0.5:1}}>
+                Reenviar e-mail de confirmação
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1324,11 +1469,11 @@ export default function App() {
   );
 
   const NAV = [
-    {id:"album",   icon:"album",   label:"Álbum"},
-    {id:"stats",   icon:"chart",   label:"Resumo"},
-    {id:"share",   icon:"repeat",  label:"Repetidas"},
-    {id:"ranking", icon:"ranking", label:"Ranking"},
-    {id:"profile", icon:"user",    label:"Perfil"},
+    {id:"album",    icon:"album",  label:"Álbum"},
+    {id:"summary",  icon:"chart",  label:"Resumo"},
+    {id:"repeated", icon:"repeat", label:"Repetidas"},
+    {id:"trade",    icon:"search", label:"Trocar"},
+    {id:"profile",  icon:"user",   label:"Perfil"},
   ];
 
   const content = selectedTeam
@@ -1337,9 +1482,9 @@ export default function App() {
       : <TeamScreen team={selectedTeam} stickers={stickers} onToggle={toggle} onToggleRep={toggleRep} onBack={()=>setSelectedTeam(null)}/>
     : <>
         {tab==="album"   && <AlbumTab stickers={stickers} onSelectTeam={t=>setSelectedTeam(t)}/>}
-        {tab==="stats"   && <ResumoTab stickers={stickers}/>}
-        {tab==="share"   && <RepetidasTab stickers={stickers} onToggleRep={toggleRep} onShare={handleShare}/>}
-        {tab==="ranking" && <RankingTab myStickers={stickers} currentUsername={username}/>}
+        {tab==="summary"  && <StatsTab stickers={stickers}/>}
+        {tab==="repeated" && <TrocarTab stickers={stickers} onToggleRep={toggleRep} onShare={handleShare}/>}
+        {tab==="trade"    && <RankingTab myStickers={stickers} currentUsername={username}/>}
         {tab==="profile" && <PerfilTabReal username={username} email={email} avatarUrl={avatarUrl} onSignOut={()=>supabase.auth.signOut()} onAvatarChange={setAvatarUrl}/>}
       </>;
 
@@ -1356,7 +1501,7 @@ export default function App() {
         .main-content{flex:1;overflow-y:auto;padding-bottom:68px} .desktop-header{display:none}
         @media(min-width:768px){
           .layout{flex-direction:row;max-width:100%;min-height:100vh}
-          .sidebar{display:flex;flex-direction:column;width:230px;min-height:100vh;background:#fff;border-right:1px solid #e5e5ea;position:sticky;top:0;padding:24px 0;flex-shrink:0}
+          .sidebar{display:flex;flex-direction:column;width:230px;height:100vh;background:#fff;border-right:1px solid #e5e5ea;position:sticky;top:0;padding:24px 0 0;flex-shrink:0;overflow:hidden}
           .top-header{display:none} .bottom-nav{display:none}
           .main-content{flex:1;overflow-y:auto;padding-bottom:0;max-width:860px}
           .desktop-header{display:flex;background:#fff;border-bottom:1px solid #e5e5ea;padding:14px 24px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
@@ -1380,17 +1525,17 @@ export default function App() {
             </div>
           </div>
           {saving&&<div style={{padding:"8px 20px",fontSize:13,color:"#8e8e93"}}>Salvando…</div>}
-          <nav style={{padding:"12px 0",flex:1}}>
+          <nav style={{padding:"12px 0",flex:1,overflowY:"auto",minHeight:0}}>
             {NAV.map(n=>{const active=tab===n.id&&!selectedTeam;return(
               <button key={n.id} onClick={()=>{setTab(n.id);setSelectedTeam(null)}}
                 style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"12px 20px",border:"none",background:active?"#f7f7f7":"transparent",cursor:"pointer",borderLeft:`3px solid ${active?"#111":"transparent"}`,color:active?"#111":"#8e8e93"}}>
                 <Icon name={n.icon} size={18} color={active?"#111":"#c7c7cc"} sw={active?2:1.5}/>
                 <span style={{fontSize:15,fontWeight:active?600:400}}>{n.label}</span>
-                {n.id==="share"&&totalRep>0&&<span style={{marginLeft:"auto",fontSize:13,fontWeight:600,color:"#c9a84c"}}>{totalRep}</span>}
+                {n.id==="repeated"&&totalRep>0&&<span style={{marginLeft:"auto",fontSize:13,fontWeight:600,color:"#c9a84c"}}>{totalRep}</span>}
               </button>
             );})}
           </nav>
-          <div style={{padding:"16px 20px",borderTop:"1px solid #f2f2f7"}}>
+          <div style={{padding:"16px 20px",borderTop:"1px solid #f2f2f7",flexShrink:0,background:"#fff"}}>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
               <div style={{width:32,height:32,borderRadius:"50%",overflow:"hidden",background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"1.5px solid #e5e5ea"}}>
                 {avatarUrl
@@ -1447,7 +1592,7 @@ export default function App() {
               <button key={n.id} onClick={()=>{setTab(n.id);setSelectedTeam(null)}}
                 style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",gap:3,position:"relative"}}>
                 <Icon name={n.icon} size={22} color={active?"#111":"#c7c7cc"} sw={active?2:1.5}/>
-                {n.id==="share"&&totalRep>0&&<div style={{position:"absolute",top:5,right:"calc(50% - 16px)",minWidth:16,height:16,padding:"0 4px",borderRadius:8,background:"#c9a84c",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700}}>{totalRep>99?"99+":totalRep}</div>}
+                {n.id==="repeated"&&totalRep>0&&<div style={{position:"absolute",top:5,right:"calc(50% - 16px)",minWidth:16,height:16,padding:"0 4px",borderRadius:8,background:"#c9a84c",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700}}>{totalRep>99?"99+":totalRep}</div>}
                 <span style={{fontSize:11,fontWeight:active?600:400,color:active?"#111":"#8e8e93"}}>{n.label}</span>
               </button>
             );})}

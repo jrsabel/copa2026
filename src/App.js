@@ -1346,10 +1346,11 @@ function AuthScreen({ onLogin }) {
     return `${s}s`;
   }
 
-  const inp = { width:"100%", padding:"12px 14px", border:"none", background:"#f2f2f7", borderRadius:10, fontSize:15, outline:"none", color:"#111", fontFamily:APPLE_FONT };
+  const inp = { width:"100%", padding:"12px 14px", border:"none", background:"#f2f2f7", borderRadius:10, fontSize:15, outline:"none", color:"#111", fontFamily:APPLE_FONT, boxSizing:"border-box" };
   return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f2f2f7",padding:"24px 20px",fontFamily:APPLE_FONT}}>
-      <div style={{width:"100%",maxWidth:380}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f2f2f7",padding:"24px 20px",fontFamily:APPLE_FONT,boxSizing:"border-box"}}>
+      <style>{`*{box-sizing:border-box}body{margin:0}`}</style>
+      <div style={{width:"100%",maxWidth:380,boxSizing:"border-box"}}>
         <div style={{textAlign:"center",marginBottom:28}}>
           <div style={{width:48,height:48,background:"#111",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
             <svg viewBox="0 0 80 90" width="26" fill="none"><path d="M22 10 C22 10 20 26 22 34 C24 42 32 46 40 46 C48 46 56 42 58 34 C60 26 58 10 58 10 Z" fill="#fff" opacity="0.9"/><path d="M22 16 C17 16 13 20 13 25 C13 30 17 34 22 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/><path d="M58 16 C63 16 67 20 67 25 C67 30 63 34 58 33" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round"/><rect x="36" y="46" width="8" height="14" rx="2" fill="#fff"/><rect x="28" y="60" width="24" height="4" rx="2" fill="#fff"/><polygon points="40,2 42,7.5 48,7.5 43.5,11 45.5,16.5 40,13 34.5,16.5 36.5,11 32,7.5 38,7.5" fill="#fff"/></svg>
@@ -1357,7 +1358,7 @@ function AuthScreen({ onLogin }) {
           <div style={{fontSize:22,fontWeight:700,color:"#111"}}>Copa 2026</div>
           <div style={{fontSize:13,color:"#8e8e93",marginTop:4}}>Álbum de figurinhas</div>
         </div>
-        <div style={{background:"#fff",borderRadius:14,padding:22}}>
+        <div style={{background:"#fff",borderRadius:14,padding:22,boxSizing:"border-box"}}>
           <div style={{display:"flex",background:"#f2f2f7",borderRadius:9,padding:3,marginBottom:20}}>
             {["login","register"].map(m=>(
               <button key={m} onClick={()=>{setMode(m);setError("");setInfo("");setPendingEmail("");}}

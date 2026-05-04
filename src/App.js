@@ -597,8 +597,8 @@ const StatsTab = ({ stickers }) => {
   );
 };
 
-// ─── ABA TROCAR ───────────────────────────────────────────────────────────────
-const TrocarTab = ({ stickers, onToggleRep, onShowPublic }) => {
+// ─── ABA REPETIDAS ───────────────────────────────────────────────────────────────
+const RepetidasTab = ({ stickers, onToggleRep, onShowPublic }) => {
   const [search, setSearch] = useState("");
   const [openGroups, setOpenGroups] = useState({});
   const toggleGroup = g => setOpenGroups(prev=>({...prev,[g]:!prev[g]}));
@@ -1054,7 +1054,7 @@ export default function App() {
     </svg>
   );
 
-  const NAV = [{id:"album",icon:"album",label:"Álbum"},{id:"stats",icon:"chart",label:"Stats"},{id:"share",icon:"repeat",label:"Trocar"},{id:"profile",icon:"user",label:"Perfil"}];
+  const NAV = [{id:"album",icon:"album",label:"Álbum"},{id:"stats",icon:"chart",label:"Stats"},{id:"share",icon:"repeat",label:"Repetidas"},{id:"profile",icon:"user",label:"Perfil"}];
 
   const content = selectedTeam
     ? selectedTeam.isSpecial
@@ -1063,7 +1063,7 @@ export default function App() {
     : <>
         {tab==="album"   && <AlbumTab stickers={stickers} onSelectTeam={t=>setSelectedTeam(t)}/>}
         {tab==="stats"   && <StatsTab stickers={stickers}/>}
-        {tab==="share"   && <TrocarTab stickers={stickers} onToggleRep={toggleRep} onShare={handleShare}/>}
+        {tab==="share"   && <RepetidasTab stickers={stickers} onToggleRep={toggleRep} onShare={handleShare}/>}
         {tab==="profile" && <PerfilTab username={username} email={email} onSignOut={()=>supabase.auth.signOut()}/>}
       </>;
 

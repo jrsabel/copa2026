@@ -1039,8 +1039,8 @@ function genPixPayload(key, name, city, amount, txid="COPA2026") {
 }
 
 // TODO: substituir pela chave PIX real
-const PIX_KEY = "00000000-0000-0000-0000-000000000000";
-const PIX_NAME = "JUNIOR SABEL";
+const PIX_KEY = "b5ab5f93-51b2-43b5-99eb-644b5183cd3e";
+const PIX_NAME = "JOSE ALBERTINO SABEL JUNIOR";
 const PIX_CITY = "SAO PAULO";
 
 // ─── MODAL DE CONTRIBUIÇÃO ───────────────────────────────────────────────────

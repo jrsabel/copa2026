@@ -1061,58 +1061,64 @@ const ContributionModal = ({ onClose, onAlreadyContributed, onLater }) => {
   }
 
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:AF}}
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:AF}}
       onClick={onClose}>
       <div onClick={e=>e.stopPropagation()}
-        style={{background:"#fff",borderRadius:16,maxWidth:380,width:"100%",maxHeight:"90vh",overflowY:"auto",padding:24,boxSizing:"border-box"}}>
-        <div style={{textAlign:"center",marginBottom:16}}>
-          <div style={{fontSize:36,marginBottom:8}}>💛</div>
-          <div style={{fontSize:19,fontWeight:700,color:"#111"}}>Está curtindo o app?</div>
-          <div style={{fontSize:14,color:"#8e8e93",marginTop:6,lineHeight:1.45}}>
-            Esse projeto é mantido por uma pessoa só. Sua contribuição via PIX ajuda a manter o app no ar e sem anúncios.
+        style={{background:"#fff",borderRadius:14,maxWidth:340,width:"100%",maxHeight:"90vh",overflowY:"auto",padding:"20px 18px",boxSizing:"border-box",position:"relative"}}>
+        {/* Botão fechar (X) */}
+        <button onClick={onClose}
+          style={{position:"absolute",top:10,right:10,width:28,height:28,borderRadius:"50%",background:"#f2f2f7",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#666",fontSize:16,fontWeight:500,fontFamily:AF,lineHeight:1}}>
+          ×
+        </button>
+
+        <div style={{textAlign:"center",marginBottom:14,marginTop:2}}>
+          <div style={{fontSize:28,marginBottom:6}}>💛</div>
+          <div style={{fontSize:17,fontWeight:700,color:"#111"}}>Está curtindo o app?</div>
+          <div style={{fontSize:13,color:"#8e8e93",marginTop:5,lineHeight:1.4}}>
+            Sua contribuição via PIX ajuda a manter o app no ar e sem anúncios.
           </div>
         </div>
 
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:8}}>
           {[10, 20, 50].map(v=>(
             <button key={v} onClick={()=>{setAmount(v);setCustomAmount("");}}
-              style={{padding:"12px",background:!customAmount&&amount===v?"#111":"#f2f2f7",border:"none",borderRadius:10,color:!customAmount&&amount===v?"#fff":"#111",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:AF}}>
+              style={{padding:"10px",background:!customAmount&&amount===v?"#111":"#f2f2f7",border:"none",borderRadius:9,color:!customAmount&&amount===v?"#fff":"#111",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:AF}}>
               R$ {v}
             </button>
           ))}
         </div>
-        <div style={{position:"relative",marginBottom:14}}>
-          <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:15,color:"#8e8e93"}}>R$</span>
+        <div style={{position:"relative",marginBottom:12}}>
+          <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#8e8e93"}}>R$</span>
           <input type="text" inputMode="decimal" value={customAmount}
             onChange={e=>setCustomAmount(e.target.value.replace(/[^\d,.]/g,""))}
             placeholder="outro valor"
-            style={{width:"100%",padding:"12px 14px 12px 38px",border:"none",background:"#f2f2f7",borderRadius:10,fontSize:15,outline:"none",color:"#111",fontFamily:AF,boxSizing:"border-box"}}/>
+            style={{width:"100%",padding:"10px 12px 10px 34px",border:"none",background:"#f2f2f7",borderRadius:9,fontSize:14,outline:"none",color:"#111",fontFamily:AF,boxSizing:"border-box"}}/>
         </div>
 
         {finalAmount > 0 && (
-          <div style={{background:"#f2f2f7",borderRadius:12,padding:14,textAlign:"center",marginBottom:10}}>
-            <img src={qrUrl} alt="QR Code PIX" style={{width:160,height:160,display:"block",margin:"0 auto",background:"#fff",padding:6,borderRadius:8}}/>
-            <div style={{fontSize:13,color:"#8e8e93",marginTop:8}}>R$ {finalAmount.toFixed(2).replace(".",",")}</div>
+          <div style={{background:"#f2f2f7",borderRadius:10,padding:10,textAlign:"center",marginBottom:8}}>
+            <img src={qrUrl} alt="QR Code PIX" style={{width:130,height:130,display:"block",margin:"0 auto",background:"#fff",padding:5,borderRadius:6}}/>
+            <div style={{fontSize:12,color:"#8e8e93",marginTop:6}}>R$ {finalAmount.toFixed(2).replace(".",",")}</div>
           </div>
         )}
 
         {finalAmount > 0 && (
           <button onClick={copyPix}
-            style={{width:"100%",padding:"13px",background:copied?"#16a34a":"#111",border:"none",borderRadius:10,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:AF,display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:10}}>
+            style={{width:"100%",padding:"11px",background:copied?"#16a34a":"#111",border:"none",borderRadius:9,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:AF,display:"flex",alignItems:"center",justifyContent:"center",gap:7,marginBottom:6}}>
             {copied
-              ? <><Icon name="check" size={14} color="#fff" sw={2.5}/> Copiado!</>
+              ? <><Icon name="check" size={13} color="#fff" sw={2.5}/> Copiado!</>
               : "Copiar código PIX"
             }
           </button>
         )}
 
-        <div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>
+        <div style={{display:"flex",flexDirection:"column",gap:2,marginTop:4}}>
           <button onClick={onAlreadyContributed}
-            style={{width:"100%",padding:"11px",background:"transparent",border:"none",color:"#0a84ff",fontSize:14,fontWeight:500,cursor:"pointer",fontFamily:AF}}>
+            style={{width:"100%",padding:"9px",background:"transparent",border:"none",color:"#666",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:AF}}>
             Já contribui — não mostrar mais
           </button>
           <button onClick={onLater}
-            style={{width:"100%",padding:"11px",background:"transparent",border:"none",color:"#8e8e93",fontSize:14,fontWeight:500,cursor:"pointer",fontFamily:AF}}>
+            style={{width:"100%",padding:"9px",background:"transparent",border:"none",color:"#8e8e93",fontSize:13,fontWeight:400,cursor:"pointer",fontFamily:AF}}>
             Talvez depois
           </button>
         </div>

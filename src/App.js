@@ -1039,8 +1039,8 @@ function genPixPayload(key, name, city, amount, txid="COPA2026") {
 }
 
 // TODO: substituir pela chave PIX real
-const PIX_KEY = "b5ab5f93-51b2-43b5-99eb-644b5183cd3e";
-const PIX_NAME = "JR SABEL";
+const PIX_KEY = "00000000-0000-0000-0000-000000000000";
+const PIX_NAME = "JUNIOR SABEL";
 const PIX_CITY = "SAO PAULO";
 
 // ─── MODAL DE CONTRIBUIÇÃO ───────────────────────────────────────────────────
@@ -1067,9 +1067,9 @@ const ContributionModal = ({ onClose, onAlreadyContributed, onLater }) => {
         style={{background:"#fff",borderRadius:16,maxWidth:380,width:"100%",maxHeight:"90vh",overflowY:"auto",padding:24,boxSizing:"border-box"}}>
         <div style={{textAlign:"center",marginBottom:16}}>
           <div style={{fontSize:36,marginBottom:8}}>💛</div>
-          <div style={{fontSize:19,fontWeight:700,color:"#111"}}>Está curtindo o site?</div>
+          <div style={{fontSize:19,fontWeight:700,color:"#111"}}>Está curtindo o app?</div>
           <div style={{fontSize:14,color:"#8e8e93",marginTop:6,lineHeight:1.45}}>
-            Sua contribuição via PIX ajuda a manter site.
+            Esse projeto é mantido por uma pessoa só. Sua contribuição via PIX ajuda a manter o app no ar e sem anúncios.
           </div>
         </div>
 
@@ -1576,7 +1576,7 @@ export default function App() {
     const firstSeen = info.first_seen_at ? new Date(info.first_seen_at) : null;
     if (!firstSeen) return false;
     const daysSinceFirst = (Date.now() - firstSeen.getTime()) / (1000*60*60*24);
-    if (daysSinceFirst < 5) return false; // espera 5 dias após primeiro acesso
+    if (daysSinceFirst < 1) return false; // espera 1 dia após primeiro acesso
     if (info.dismissed_until) {
       const dismissed = new Date(info.dismissed_until);
       if (Date.now() < dismissed.getTime()) return false; // ainda em período de dispensa

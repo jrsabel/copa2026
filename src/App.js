@@ -19,7 +19,7 @@ const GROUPS = {
     {name:"Brasil",          code:"BRA", flag:"🇧🇷"},
     {name:"Marrocos",        code:"MAR", flag:"🇲🇦"},
     {name:"Haiti",           code:"HAI", flag:"🇭🇹"},
-    {name:"Escócia",         code:"SCO", flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿"},
+    {name:"Escócia",         code:"SCO", flag:"SC"},
   ],
   D: [
     {name:"Estados Unidos",  code:"USA", flag:"🇺🇸"},
@@ -70,7 +70,7 @@ const GROUPS = {
     {name:"Colômbia",        code:"COL", flag:"🇨🇴"},
   ],
   L: [
-    {name:"Inglaterra",      code:"ENG", flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿"},
+    {name:"Inglaterra",      code:"ENG", flag:"EN"},
     {name:"Croácia",         code:"CRO", flag:"🇭🇷"},
     {name:"Gana",            code:"GHA", flag:"🇬🇭"},
     {name:"Panamá",          code:"PAN", flag:"🇵🇦"},
@@ -591,6 +591,19 @@ const StatsTab = ({ stickers }) => {
               </div>
             );
           })}
+          {Object.entries(SPECIAL_GROUPS).map(([key,grp])=>{
+            const o=grp.ids.filter(id=>stickers[id]?.owned).length;
+            const p=Math.round((o/grp.ids.length)*100);
+            return (
+              <div key={key}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,fontSize:11}}>
+                  <span style={{fontWeight:600,color:"#333"}}>{grp.label}</span>
+                  <span style={{color:"#8e8e93"}}>{o}/{grp.ids.length} <b style={{color:"#111"}}>{p}%</b></span>
+                </div>
+                <Bar value={o} total={grp.ids.length} height={2} color={grp.color}/>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -981,7 +994,7 @@ const RankingTab = ({ myStickers, currentUsername }) => {
                 {!isMe && (
                   <div style={{textAlign:"right",flexShrink:0}}>
                     <div style={{fontSize:17,fontWeight:700,color:useful>0?"#111":"#c7c7cc"}}>{useful}</div>
-                    <div style={{fontSize:11,color:"#8e8e93"}}>pra você</div>
+                    <div style={{fontSize:11,color:"#8e8e93"}}>match</div>
                   </div>
                 )}
                 {!isMe && <Icon name="right" size={14} color="#c7c7cc" sw={2}/>}
@@ -994,12 +1007,41 @@ const RankingTab = ({ myStickers, currentUsername }) => {
       <div style={{marginTop:20,padding:"14px 16px",background:"#fff",borderRadius:12}}>
         <div style={{fontSize:13,fontWeight:600,color:"#111",marginBottom:4}}>Como funciona?</div>
         <div style={{fontSize:13,color:"#8e8e93",lineHeight:1.5}}>
-          O número <b style={{color:"#111"}}>"pra você"</b> mostra quantas das repetidas desse usuário você ainda não tem no seu álbum. Quanto maior, mais vale a pena trocar!
+          O número <b style={{color:"#111"}}>"match"</b> mostra quantas das repetidas desse usuário você ainda não tem no seu álbum.
         </div>
       </div>
     </div>
   );
 };
+
+// ─── GERADOR DE PIX BR CODE (copia-e-cola) ────────────────────────────────────
+function genPixPayload(key, name, city, amount, txid="COPA2026") {
+  const f = (id, val) => id + String(val.length).padStart(2,"0") + val;
+  const merchantAccount = f("00","BR.GOV.BCB.PIX") + f("01", key);
+  const additional = f("05", txid);
+  let payload =
+    f("00","01") +
+    f("26", merchantAccount) +
+    f("52","0000") +
+    f("53","986") +
+    (amount > 0 ? f("54", amount.toFixed(2)) : "") +
+    f("58","BR") +
+    f("59", name.substring(0,25)) +
+    f("60", city.substring(0,15)) +
+    f("62", additional) +
+    "6304";
+  let crc = 0xFFFF;
+  for (let i=0; i<payload.length; i++) {
+    crc ^= payload.charCodeAt(i) << 8;
+    for (let j=0; j<8; j++) crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+  }
+  return payload + crc.toString(16).toUpperCase().padStart(4,"0");
+}
+
+// TODO: substituir pela chave PIX real
+const PIX_KEY = "b5ab5f93-51b2-43b5-99eb-644b5183cd3e";
+const PIX_NAME = "JOSE A SABEL JR";
+const PIX_CITY = "SAO PAULO";
 
 // ─── PERFIL com upload de foto ────────────────────────────────────────────────
 const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange }) => {
@@ -1010,7 +1052,21 @@ const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange }
   const [pwdError, setPwdError] = useState("");
   const [pwdInfo, setPwdInfo] = useState("");
   const [pwdLoading, setPwdLoading] = useState(false);
+  const [showPix, setShowPix] = useState(false);
+  const [amount, setAmount] = useState(10);
+  const [customAmount, setCustomAmount] = useState("");
+  const [copied, setCopied] = useState(false);
   const AF = "-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif";
+
+  const finalAmount = customAmount ? parseFloat(customAmount.replace(",",".")) || 0 : amount;
+  const pixCode = useMemo(()=> genPixPayload(PIX_KEY, PIX_NAME, PIX_CITY, finalAmount), [finalAmount]);
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(pixCode)}`;
+
+  function copyPix() {
+    navigator.clipboard.writeText(pixCode);
+    setCopied(true);
+    setTimeout(()=>setCopied(false), 2000);
+  }
 
   async function handleUpload(e) {
     const file = e.target.files?.[0];
@@ -1090,6 +1146,63 @@ const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange }
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Contribuir via PIX */}
+      {!showPix ? (
+        <button onClick={()=>setShowPix(true)}
+          style={{width:"100%",padding:"13px",background:"#fff",border:"none",borderRadius:12,color:"#111",fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:AF,marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          <span style={{fontSize:18}}>🩶</span> Contribuir com site
+        </button>
+      ) : (
+        <div style={{background:"#fff",borderRadius:12,padding:18,marginBottom:10}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+            <div style={{fontSize:15,fontWeight:600,color:"#111"}}>Contribuir via PIX</div>
+            <button onClick={()=>{setShowPix(false);setCustomAmount("");setAmount(10);}}
+              style={{background:"none",border:"none",fontSize:13,color:"#8e8e93",cursor:"pointer",fontFamily:AF}}>
+              Fechar
+            </button>
+          </div>
+          <div style={{fontSize:13,color:"#8e8e93",marginBottom:14,lineHeight:1.4}}>
+            Sua contribuição ajuda a manter o site funcionando. Obrigado 🩶
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
+            {[10, 20, 50].map(v=>(
+              <button key={v} onClick={()=>{setAmount(v);setCustomAmount("");}}
+                style={{padding:"12px",background:!customAmount&&amount===v?"#111":"#f2f2f7",border:"none",borderRadius:10,color:!customAmount&&amount===v?"#fff":"#111",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:AF}}>
+                R$ {v}
+              </button>
+            ))}
+          </div>
+          <div style={{position:"relative",marginBottom:14}}>
+            <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:15,color:"#8e8e93",fontFamily:AF}}>R$</span>
+            <input type="text" inputMode="decimal" value={customAmount}
+              onChange={e=>setCustomAmount(e.target.value.replace(/[^\d,.]/g,""))}
+              placeholder="outro valor"
+              style={{width:"100%",padding:"12px 14px 12px 38px",border:"none",background:"#f2f2f7",borderRadius:10,fontSize:15,outline:"none",color:"#111",fontFamily:AF,boxSizing:"border-box"}}/>
+          </div>
+          {finalAmount > 0 && (
+            <>
+              <div style={{background:"#f2f2f7",borderRadius:12,padding:16,textAlign:"center",marginBottom:12}}>
+                <img src={qrUrl} alt="QR Code PIX" style={{width:200,height:200,display:"block",margin:"0 auto",background:"#fff",padding:8,borderRadius:8}}/>
+                <div style={{fontSize:13,color:"#8e8e93",marginTop:10}}>Escaneie no seu app do banco</div>
+                <div style={{fontSize:18,fontWeight:700,color:"#111",marginTop:4}}>R$ {finalAmount.toFixed(2).replace(".",",")}</div>
+              </div>
+              <button onClick={copyPix}
+                style={{width:"100%",padding:"13px",background:copied?"#16a34a":"#111",border:"none",borderRadius:10,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:AF,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                {copied
+                  ? <><Icon name="check" size={14} color="#fff" sw={2.5}/> Copiado!</>
+                  : "Copiar código PIX"
+                }
+              </button>
+            </>
+          )}
+          {finalAmount === 0 && customAmount && (
+            <div style={{background:"#fef2f2",borderRadius:8,padding:"10px 12px",fontSize:13,color:"#dc2626"}}>
+              Digite um valor válido
+            </div>
+          )}
         </div>
       )}
 

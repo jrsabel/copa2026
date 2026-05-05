@@ -1040,19 +1040,11 @@ function genPixPayload(key, name, city, amount, txid="COPA2026") {
 
 // TODO: substituir pela chave PIX real
 const PIX_KEY = "b5ab5f93-51b2-43b5-99eb-644b5183cd3e";
-const PIX_NAME = "JOSE A SABEL JR";
+const PIX_NAME = "JR SABEL";
 const PIX_CITY = "SAO PAULO";
 
-// ─── PERFIL com upload de foto ────────────────────────────────────────────────
-const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange }) => {
-  const [uploading, setUploading] = useState(false);
-  const [showPwd, setShowPwd] = useState(false);
-  const [newPwd, setNewPwd] = useState("");
-  const [confirmPwd, setConfirmPwd] = useState("");
-  const [pwdError, setPwdError] = useState("");
-  const [pwdInfo, setPwdInfo] = useState("");
-  const [pwdLoading, setPwdLoading] = useState(false);
-  const [showPix, setShowPix] = useState(false);
+// ─── MODAL DE CONTRIBUIÇÃO ───────────────────────────────────────────────────
+const ContributionModal = ({ onClose, onAlreadyContributed, onLater }) => {
   const [amount, setAmount] = useState(10);
   const [customAmount, setCustomAmount] = useState("");
   const [copied, setCopied] = useState(false);
@@ -1060,13 +1052,86 @@ const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange }
 
   const finalAmount = customAmount ? parseFloat(customAmount.replace(",",".")) || 0 : amount;
   const pixCode = useMemo(()=> genPixPayload(PIX_KEY, PIX_NAME, PIX_CITY, finalAmount), [finalAmount]);
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(pixCode)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixCode)}`;
 
   function copyPix() {
     navigator.clipboard.writeText(pixCode);
     setCopied(true);
     setTimeout(()=>setCopied(false), 2000);
   }
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:AF}}
+      onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()}
+        style={{background:"#fff",borderRadius:16,maxWidth:380,width:"100%",maxHeight:"90vh",overflowY:"auto",padding:24,boxSizing:"border-box"}}>
+        <div style={{textAlign:"center",marginBottom:16}}>
+          <div style={{fontSize:36,marginBottom:8}}>💛</div>
+          <div style={{fontSize:19,fontWeight:700,color:"#111"}}>Está curtindo o site?</div>
+          <div style={{fontSize:14,color:"#8e8e93",marginTop:6,lineHeight:1.45}}>
+            Sua contribuição via PIX ajuda a manter site.
+          </div>
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
+          {[10, 20, 50].map(v=>(
+            <button key={v} onClick={()=>{setAmount(v);setCustomAmount("");}}
+              style={{padding:"12px",background:!customAmount&&amount===v?"#111":"#f2f2f7",border:"none",borderRadius:10,color:!customAmount&&amount===v?"#fff":"#111",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:AF}}>
+              R$ {v}
+            </button>
+          ))}
+        </div>
+        <div style={{position:"relative",marginBottom:14}}>
+          <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:15,color:"#8e8e93"}}>R$</span>
+          <input type="text" inputMode="decimal" value={customAmount}
+            onChange={e=>setCustomAmount(e.target.value.replace(/[^\d,.]/g,""))}
+            placeholder="outro valor"
+            style={{width:"100%",padding:"12px 14px 12px 38px",border:"none",background:"#f2f2f7",borderRadius:10,fontSize:15,outline:"none",color:"#111",fontFamily:AF,boxSizing:"border-box"}}/>
+        </div>
+
+        {finalAmount > 0 && (
+          <div style={{background:"#f2f2f7",borderRadius:12,padding:14,textAlign:"center",marginBottom:10}}>
+            <img src={qrUrl} alt="QR Code PIX" style={{width:160,height:160,display:"block",margin:"0 auto",background:"#fff",padding:6,borderRadius:8}}/>
+            <div style={{fontSize:13,color:"#8e8e93",marginTop:8}}>R$ {finalAmount.toFixed(2).replace(".",",")}</div>
+          </div>
+        )}
+
+        {finalAmount > 0 && (
+          <button onClick={copyPix}
+            style={{width:"100%",padding:"13px",background:copied?"#16a34a":"#111",border:"none",borderRadius:10,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:AF,display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:10}}>
+            {copied
+              ? <><Icon name="check" size={14} color="#fff" sw={2.5}/> Copiado!</>
+              : "Copiar código PIX"
+            }
+          </button>
+        )}
+
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>
+          <button onClick={onAlreadyContributed}
+            style={{width:"100%",padding:"11px",background:"transparent",border:"none",color:"#0a84ff",fontSize:14,fontWeight:500,cursor:"pointer",fontFamily:AF}}>
+            Já contribui — não mostrar mais
+          </button>
+          <button onClick={onLater}
+            style={{width:"100%",padding:"11px",background:"transparent",border:"none",color:"#8e8e93",fontSize:14,fontWeight:500,cursor:"pointer",fontFamily:AF}}>
+            Talvez depois
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── PERFIL com upload de foto ────────────────────────────────────────────────
+const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange, onMarkContributed }) => {
+  const [uploading, setUploading] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
+  const [showContrib, setShowContrib] = useState(false);
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [pwdError, setPwdError] = useState("");
+  const [pwdInfo, setPwdInfo] = useState("");
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const AF = "-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif";
 
   async function handleUpload(e) {
     const file = e.target.files?.[0];
@@ -1119,6 +1184,10 @@ const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange }
         </label>
         <div style={{fontSize:17,fontWeight:600,color:"#111"}}>{username||""}</div>
         <div style={{fontSize:13,color:"#8e8e93",marginTop:3}}>{email||""}</div>
+        <button onClick={()=>setShowContrib(true)}
+          style={{marginTop:14,padding:"7px 14px",background:"#fffbea",border:"1px solid #f0e0a0",borderRadius:20,color:"#9a7a1a",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:AF,display:"inline-flex",alignItems:"center",gap:5}}>
+          <span style={{fontSize:13}}>💛</span> Contribuir
+        </button>
         {uploading&&<div style={{fontSize:12,color:"#8e8e93",marginTop:8}}>Enviando foto...</div>}
       </div>
 
@@ -1149,66 +1218,17 @@ const PerfilTabReal = ({ username, email, avatarUrl, onSignOut, onAvatarChange }
         </div>
       )}
 
-      {/* Contribuir via PIX */}
-      {!showPix ? (
-        <button onClick={()=>setShowPix(true)}
-          style={{width:"100%",padding:"13px",background:"#fff",border:"none",borderRadius:12,color:"#111",fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:AF,marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-          <span style={{fontSize:18}}>🩶</span> Contribuir com site
-        </button>
-      ) : (
-        <div style={{background:"#fff",borderRadius:12,padding:18,marginBottom:10}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-            <div style={{fontSize:15,fontWeight:600,color:"#111"}}>Contribuir via PIX</div>
-            <button onClick={()=>{setShowPix(false);setCustomAmount("");setAmount(10);}}
-              style={{background:"none",border:"none",fontSize:13,color:"#8e8e93",cursor:"pointer",fontFamily:AF}}>
-              Fechar
-            </button>
-          </div>
-          <div style={{fontSize:13,color:"#8e8e93",marginBottom:14,lineHeight:1.4}}>
-            Sua contribuição ajuda a manter o site funcionando. Obrigado 🩶
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
-            {[10, 20, 50].map(v=>(
-              <button key={v} onClick={()=>{setAmount(v);setCustomAmount("");}}
-                style={{padding:"12px",background:!customAmount&&amount===v?"#111":"#f2f2f7",border:"none",borderRadius:10,color:!customAmount&&amount===v?"#fff":"#111",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:AF}}>
-                R$ {v}
-              </button>
-            ))}
-          </div>
-          <div style={{position:"relative",marginBottom:14}}>
-            <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:15,color:"#8e8e93",fontFamily:AF}}>R$</span>
-            <input type="text" inputMode="decimal" value={customAmount}
-              onChange={e=>setCustomAmount(e.target.value.replace(/[^\d,.]/g,""))}
-              placeholder="outro valor"
-              style={{width:"100%",padding:"12px 14px 12px 38px",border:"none",background:"#f2f2f7",borderRadius:10,fontSize:15,outline:"none",color:"#111",fontFamily:AF,boxSizing:"border-box"}}/>
-          </div>
-          {finalAmount > 0 && (
-            <>
-              <div style={{background:"#f2f2f7",borderRadius:12,padding:16,textAlign:"center",marginBottom:12}}>
-                <img src={qrUrl} alt="QR Code PIX" style={{width:200,height:200,display:"block",margin:"0 auto",background:"#fff",padding:8,borderRadius:8}}/>
-                <div style={{fontSize:13,color:"#8e8e93",marginTop:10}}>Escaneie no seu app do banco</div>
-                <div style={{fontSize:18,fontWeight:700,color:"#111",marginTop:4}}>R$ {finalAmount.toFixed(2).replace(".",",")}</div>
-              </div>
-              <button onClick={copyPix}
-                style={{width:"100%",padding:"13px",background:copied?"#16a34a":"#111",border:"none",borderRadius:10,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:AF,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                {copied
-                  ? <><Icon name="check" size={14} color="#fff" sw={2.5}/> Copiado!</>
-                  : "Copiar código PIX"
-                }
-              </button>
-            </>
-          )}
-          {finalAmount === 0 && customAmount && (
-            <div style={{background:"#fef2f2",borderRadius:8,padding:"10px 12px",fontSize:13,color:"#dc2626"}}>
-              Digite um valor válido
-            </div>
-          )}
-        </div>
-      )}
-
       <button onClick={onSignOut} style={{width:"100%",padding:"13px",background:"#fff",border:"none",borderRadius:12,color:"#dc2626",fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:AF}}>
         Sair da conta
       </button>
+
+      {showContrib && (
+        <ContributionModal
+          onClose={()=>setShowContrib(false)}
+          onAlreadyContributed={async ()=>{ await onMarkContributed?.(); setShowContrib(false); }}
+          onLater={()=>setShowContrib(false)}
+        />
+      )}
     </div>
   );
 };
@@ -1512,6 +1532,8 @@ export default function App() {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [saving, setSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
+  const [showContribAuto, setShowContribAuto] = useState(false);
+  const [contribInfo, setContribInfo] = useState(null); // { contributed_at, dismissed_until, first_seen_at }
   const APPLE_FONT = "-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif";
 
   useEffect(() => {
@@ -1528,9 +1550,53 @@ export default function App() {
         data?.forEach(r => { m[r.sticker_id] = { owned: r.owned, qty: r.qty||0 }; });
         setStickers(m);
       });
-    supabase.from("public_repeated").select("avatar_url").eq("user_id", session.user.id).single()
-      .then(({ data }) => { if (data?.avatar_url) setAvatarUrl(data.avatar_url); });
+    // Carrega dados de contribuição + avatar
+    supabase.from("public_repeated").select("avatar_url,contributed_at,dismissed_until,first_seen_at").eq("user_id", session.user.id).single()
+      .then(async ({ data }) => {
+        if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+        let info = data;
+        // Se não tem first_seen_at, marca agora
+        if (data && !data.first_seen_at) {
+          const now = new Date().toISOString();
+          await supabase.from("public_repeated").update({ first_seen_at: now }).eq("user_id", session.user.id);
+          info = { ...data, first_seen_at: now };
+        }
+        setContribInfo(info);
+        // Avalia se deve mostrar modal
+        if (info && shouldShowContribModal(info)) {
+          // Atraso de 20s para não mostrar no primeiro segundo
+          setTimeout(()=>setShowContribAuto(true), 20000);
+        }
+      });
   }, [session]);
+
+  function shouldShowContribModal(info) {
+    if (!info) return false;
+    if (info.contributed_at) return false; // já contribuiu, nunca mostra
+    const firstSeen = info.first_seen_at ? new Date(info.first_seen_at) : null;
+    if (!firstSeen) return false;
+    const daysSinceFirst = (Date.now() - firstSeen.getTime()) / (1000*60*60*24);
+    if (daysSinceFirst < 5) return false; // espera 5 dias após primeiro acesso
+    if (info.dismissed_until) {
+      const dismissed = new Date(info.dismissed_until);
+      if (Date.now() < dismissed.getTime()) return false; // ainda em período de dispensa
+    }
+    return true;
+  }
+
+  async function markContributed() {
+    const now = new Date().toISOString();
+    await supabase.from("public_repeated").update({ contributed_at: now }).eq("user_id", session.user.id);
+    setContribInfo(prev => ({ ...prev, contributed_at: now }));
+    setShowContribAuto(false);
+  }
+
+  async function dismissContribLater() {
+    const until = new Date(Date.now() + 7*24*60*60*1000).toISOString();
+    await supabase.from("public_repeated").update({ dismissed_until: until }).eq("user_id", session.user.id);
+    setContribInfo(prev => ({ ...prev, dismissed_until: until }));
+    setShowContribAuto(false);
+  }
 
   const syncPublic = useCallback(async (updated) => {
     const ids = Object.entries(updated).filter(([,v])=>v.owned&&(v.qty||0)>0).map(([k])=>k);
@@ -1602,7 +1668,7 @@ export default function App() {
         {tab==="summary"  && <StatsTab stickers={stickers}/>}
         {tab==="repeated" && <TrocarTab stickers={stickers} onToggleRep={toggleRep} onShare={handleShare}/>}
         {tab==="trade"    && <RankingTab myStickers={stickers} currentUsername={username}/>}
-        {tab==="profile" && <PerfilTabReal username={username} email={email} avatarUrl={avatarUrl} onSignOut={()=>supabase.auth.signOut()} onAvatarChange={setAvatarUrl}/>}
+        {tab==="profile" && <PerfilTabReal username={username} email={email} avatarUrl={avatarUrl} onSignOut={()=>supabase.auth.signOut()} onAvatarChange={setAvatarUrl} onMarkContributed={markContributed}/>}
       </>;
 
   return (
@@ -1716,6 +1782,14 @@ export default function App() {
           </nav>
         </div>
       </div>
+
+      {showContribAuto && (
+        <ContributionModal
+          onClose={()=>setShowContribAuto(false)}
+          onAlreadyContributed={markContributed}
+          onLater={dismissContribLater}
+        />
+      )}
     </div>
   );
 }
